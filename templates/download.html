@@ -1,0 +1,79 @@
+{% extends 'base.html' %} {% block title %}Скачать JARVIS v22.0{% endblock %} {%
+block content %}
+
+<div class="download-hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="download-box animate-on-scroll">
+        <div class="section-label">Последний релиз</div>
+        <div class="download-version">v22.0</div>
+        <div class="download-info">
+            JARVIS AI Assistant для Windows 10/11<br />
+            {% if file_exists %} Размер: <strong>{{ size_mb }} МБ</strong> ·
+            Установщик {% else %}
+            <span style="color: var(--accent-red)"
+                >⚠ Файл временно недоступен</span
+            >
+            {% endif %}
+        </div>
+
+        {% if file_exists %}
+        <a
+            href="{{ url_for('download_file') }}"
+            class="btn btn-primary"
+            style="
+                width: 100%;
+                justify-content: center;
+                font-size: 1rem;
+                padding: 1rem;
+            "
+        >
+            ⬇ Скачать JARVIS_Setup_v22.exe
+        </a>
+        <p
+            style="
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                margin-top: 0.8rem;
+            "
+        >
+            Бесплатно · Без рекламы · Без подписок
+        </p>
+        {% else %}
+        <div
+            style="
+                background: rgba(192, 57, 43, 0.1);
+                border: 1px solid var(--accent-red);
+                border-radius: 4px;
+                padding: 1rem;
+                color: #e74c3c;
+            "
+        >
+            Файл установщика временно недоступен. Попробуйте позже.
+        </div>
+        {% endif %}
+
+        <div class="requirements">
+            <h4>Системные требования</h4>
+            <div class="req-item">
+                <span class="req-icon">🖥️</span> Windows 10 / 11 (64-bit)
+            </div>
+            <div class="req-item">
+                <span class="req-icon">🧠</span> ОЗУ: от 4 ГБ (рекомендуется 8
+                ГБ)
+            </div>
+            <div class="req-item">
+                <span class="req-icon">💾</span> Диск: ~2 ГБ свободного места
+            </div>
+            <div class="req-item">
+                <span class="req-icon">🎙️</span> Микрофон для голосового
+                управления
+            </div>
+            <div class="req-item">
+                <span class="req-icon">🌐</span> Интернет для AI-запросов
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

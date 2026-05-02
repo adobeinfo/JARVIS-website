@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{% block title %}JARVIS AI Assistant{% endblock %}</title>
+        <meta
+            name="description"
+            content="JARVIS — персональный AI-ассистент с голосовым управлением для Windows. GigaChat без VPN, голосовые команды, мультипровайдерный TTS."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='css/style.css') }}"
+        />
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+        <!-- ═══ NAVBAR ══════════════════════════════════════════════ -->
+        <nav class="navbar" id="navbar">
+            <div class="nav-inner">
+                <a href="{{ url_for('index') }}" class="nav-logo"
+                    >JARV<span>IS</span></a
+                >
+
+                <ul class="nav-links" id="navLinks">
+                    <a
+                        href="{{ url_for('index') }}"
+                        class="{{ 'active' if request.endpoint=='index' else '' }}"
+                        >Главная</a
+                    >
+                    <a
+                        href="{{ url_for('news') }}"
+                        class="{{ 'active' if 'news' in (request.endpoint or '') else '' }}"
+                        >Новости</a
+                    >
+                    <a
+                        href="{{ url_for('forum') }}"
+                        class="{{ 'active' if 'forum' in (request.endpoint or '') else '' }}"
+                        >Форум</a
+                    >
+                    <a
+                        href="{{ url_for('download') }}"
+                        class="{{ 'active' if request.endpoint=='download' else '' }}"
+                        >Скачать</a
+                    >
+                </ul>
+
+                <div class="nav-right">
+                    <a
+                        href="https://boosty.to/photoshop24/donate"
+                        target="_blank"
+                        rel="noopener"
+                        class="nav-support"
+                        >♥ Поддержать</a
+                    >
+                    <a href="{{ url_for('download') }}" class="nav-cta"
+                        >⬇ Скачать</a
+                    >
+                    <div
+                        class="nav-burger"
+                        id="navBurger"
+                        onclick="toggleMenu()"
+                    >
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ═══ FLASH ═══════════════════════════════════════════════ -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+                {% if category == 'success' %}✓{% elif category == 'error' %}✗{%
+                else %}ℹ{% endif %} {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %} {% endwith %} {% block content %}{% endblock %}
+
+        <!-- ═══ FOOTER ══════════════════════════════════════════════ -->
+        <footer class="footer">
+            <div class="footer-inner">
+                <div>
+                    <div class="footer-brand-logo">JARVIS</div>
+                    <p class="footer-brand-desc">
+                        Персональный AI-ассистент нового поколения для Windows.
+                        Голосовое управление, GigaChat без VPN,
+                        мультипровайдерный TTS.
+                    </p>
+                </div>
+                <div>
+                    <div class="footer-col-title">Навигация</div>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('index') }}">Главная</a></li>
+                        <li><a href="{{ url_for('news') }}">Новости</a></li>
+                        <li><a href="{{ url_for('forum') }}">Форум</a></li>
+                        <li><a href="{{ url_for('download') }}">Скачать</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="footer-col-title">Проект</div>
+                    <ul class="footer-links">
+                        <li>
+                            <a
+                                href="https://t.me/Jarvis_assistant_free"
+                                target="_blank"
+                                >Telegram канал</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="https://boosty.to/photoshop24/donate"
+                                target="_blank"
+                                >♥ Поддержать на Boosty</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="{{ url_for('admin_login') }}"
+                                style="color: var(--text3)"
+                                >Для администратора</a
+                            >
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2024–2026 JARVIS Team. Все права защищены.</span>
+                <div style="display: flex; gap: 1.5rem; align-items: center">
+                    <a href="https://t.me/Jarvis_assistant_free" target="_blank"
+                        >Telegram</a
+                    >
+                    <a
+                        href="https://boosty.to/photoshop24/donate"
+                        target="_blank"
+                        style="color: var(--gold)"
+                        >♥ Boosty</a
+                    >
+                </div>
+            </div>
+        </footer>
+
+        <!-- ═══ AI CHAT WIDGET ═════════════════════════════════ -->
+        <button
+            class="chat-fab"
+            id="chatFab"
+            onclick="toggleChat()"
+            title="Спросить AI"
+        >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.06L2 22l4.94-1.37C8.42 21.5 10.15 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14H7v-2h6v2zm4-4H7v-2h10v2zm0-4H7V6h10v2z"
+                />
+            </svg>
+            <div class="chat-fab-badge"></div>
+        </button>
+
+        <div class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                <div class="chat-header-avatar">🤖</div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name">JARVIS AI</div>
+                    <div class="chat-header-status">
+                        <div class="chat-status-dot"></div>
+                        GigaChat · Онлайн
+                    </div>
+                </div>
+                <button class="chat-close" onclick="toggleChat()">✕</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-msg bot">
+                    <div class="chat-msg-avatar">🤖</div>
+                    <div class="chat-msg-bubble">
+                        Привет! Я — AI-ассистент сайта JARVIS. Могу рассказать о
+                        программе, помочь с установкой и ответить на любой
+                        вопрос ✨
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-suggestions" id="chatSuggestions">
+                <button
+                    class="chat-suggestion"
+                    onclick="sendSuggestion('Как скачать JARVIS?')"
+                >
+                    &#x2B07; Скачать
+                </button>
+                <button
+                    class="chat-suggestion"
+                    onclick="sendSuggestion('Какие системные требования?')"
+                >
+                    &#x1F4BB; Требования
+                </button>
+                <button
+                    class="chat-suggestion"
+                    onclick="sendSuggestion('Что такое Wake-Word?')"
+                >
+                    &#x1F3A4; Wake-Word
+                </button>
+                <button
+                    class="chat-suggestion"
+                    onclick="sendSuggestion('Как настроить GigaChat?')"
+                >
+                    &#x1F916; GigaChat
+                </button>
+                <button
+                    class="chat-suggestion"
+                    onclick="sendSuggestion('Какие есть голоса TTS?')"
+                >
+                    &#x1F3B5; TTS голоса
+                </button>
+                <button
+                    class="chat-suggestion"
+                    onclick="sendSuggestion('Бесплатно ли JARVIS?')"
+                >
+                    &#x1F4B0; Бесплатно?
+                </button>
+            </div>
+
+            <div class="chat-footer">
+                <div class="chat-input-row">
+                    <textarea
+                        id="chatInput"
+                        class="chat-input"
+                        placeholder="Спросите что-нибудь..."
+                        rows="1"
+                        onkeydown="chatKeyDown(event)"
+                        oninput="chatInputUpdate(this)"
+                    ></textarea>
+                    <button
+                        class="chat-send"
+                        id="chatSend"
+                        onclick="chatSend()"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    </body>
+</html>

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}404 — Страница не найдена{% endblock %}
+{% block content %}
+
+<div class="error-page">
+  <div class="error-code">404</div>
+  <div style="font-family:'Oswald',sans-serif;font-size:1.2rem;letter-spacing:3px;text-transform:uppercase;
+              color:var(--text-muted);margin:.5rem 0 2rem">Страница не найдена</div>
+  <a href="{{ url_for('index') }}" class="btn btn-primary">← На главную</a>
+</div>
+
+{% endblock %}

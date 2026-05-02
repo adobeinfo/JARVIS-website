@@ -1,0 +1,49 @@
+{% extends 'base.html' %} {% block title %}Форум — JARVIS{% endblock %} {% block
+content %}
+
+<div class="page-header">
+    <div class="page-header-inner">
+        <div class="page-header-label">Сообщество</div>
+        <h1 class="page-header-title">Форум</h1>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="forum-categories">
+            {% for cat in categories %}
+            <a
+                href="{{ url_for('forum_category', cat_id=cat['id']) }}"
+                class="forum-cat-card animate-on-scroll"
+            >
+                <div class="forum-cat-icon">{{ cat['icon'] }}</div>
+                <div class="forum-cat-info">
+                    <div class="forum-cat-name">{{ cat['name'] }}</div>
+                    <div class="forum-cat-desc">{{ cat['description'] }}</div>
+                </div>
+                <div class="forum-cat-stats">
+                    <div class="forum-cat-count">{{ cat['post_count'] }}</div>
+                    <div class="forum-cat-count-label">тем</div>
+                </div>
+            </a>
+            {% else %}
+            <div
+                class="text-center"
+                style="padding: 4rem 0; color: var(--text-muted)"
+            >
+                <div style="font-size: 3rem; margin-bottom: 1rem">💬</div>
+                <div
+                    style="
+                        font-family: &quot;Oswald&quot;, sans-serif;
+                        letter-spacing: 2px;
+                    "
+                >
+                    Категорий пока нет
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}

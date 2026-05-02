@@ -1,0 +1,391 @@
+{% extends 'base.html' %} {% block title %}JARVIS AI — Персональный голосовой
+ассистент{% endblock %} {% block content %}
+
+<!-- ─── HERO ──────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-scan"></div>
+    <div class="hero-content">
+        <div class="hero-eyebrow">AI Assistant · Windows · v22.0</div>
+
+        <h1 class="hero-title">JARV<span class="accent">IS</span></h1>
+
+        <p class="hero-subtitle">
+            Персональный AI-ассистент с голосовым управлением.<br />
+            GigaChat без VPN. Русский язык. Полностью бесплатно.
+        </p>
+
+        <div class="hero-actions">
+            <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">
+                ⬇ Скачать v22.0
+            </a>
+            <a href="{{ url_for('forum') }}" class="btn btn-secondary btn-lg">
+                💬 Сообщество
+            </a>
+        </div>
+
+        <div class="hero-meta">
+            <div class="hero-meta-item">
+                <div class="hero-meta-num">22</div>
+                <div class="hero-meta-label">Версия</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="hero-meta-num">6</div>
+                <div class="hero-meta-label">TTS движков</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="hero-meta-num">3</div>
+                <div class="hero-meta-label">AI провайдера</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="hero-meta-num">100%</div>
+                <div class="hero-meta-label">Бесплатно</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── ТЕХНОЛОГИИ (реальные логотипы) ───────────────── -->
+<div class="marquee-section">
+    <div class="marquee-label-bar">Технологии которые мы используем</div>
+    <div class="marquee-wrapper">
+        <div class="marquee-track">
+            {% set companies = [ ('https://cdn.simpleicons.org/python/ffffff',
+            'Python', 'img'), ('https://cdn.simpleicons.org/openai/ffffff',
+            'OpenAI', 'img'),
+            ('https://cdn.simpleicons.org/microsoftedge/ffffff', 'Edge TTS',
+            'img'), ('GROQ', 'Groq', 'txt'), ('SBER', 'GigaChat', 'txt'),
+            ('https://cdn.simpleicons.org/pytorch/ffffff', 'PyTorch', 'img'),
+            ('XTTS', 'Coqui XTTS', 'txt'),
+            ('https://cdn.simpleicons.org/numpy/ffffff', 'NumPy', 'img'),
+            ('VOSK', 'Vosk', 'txt'),
+            ('https://cdn.simpleicons.org/sqlite/ffffff', 'SQLite', 'img'),
+            ('11EL', 'ElevenLabs', 'txt'),
+            ('https://cdn.simpleicons.org/windows/ffffff', 'Windows', 'img'),
+            ('FISH', 'Fish Audio', 'txt'),
+            ('https://cdn.simpleicons.org/flask/ffffff', 'Flask', 'img'),
+            ('MISTRAL', 'Mistral AI', 'txt'),
+            ('https://cdn.simpleicons.org/discord/ffffff', 'Discord RPC',
+            'img'), ] %} {# Первая копия #} {% for logo, name, t in companies %}
+            <div class="marquee-item">
+                <div
+                    class="marquee-item-logo {% if t == 'txt' %}logo-text{% endif %}"
+                >
+                    {% if t == 'img' %}<img
+                        src="{{ logo }}"
+                        alt="{{ name }}"
+                        loading="lazy"
+                    />
+                    {% else %}{{ logo }}{% endif %}
+                </div>
+                <span class="marquee-item-name">{{ name }}</span>
+            </div>
+            {% endfor %} {# Вторая копия для бесконечного скролла #} {% for
+            logo, name, t in companies %}
+            <div class="marquee-item">
+                <div
+                    class="marquee-item-logo {% if t == 'txt' %}logo-text{% endif %}"
+                >
+                    {% if t == 'img' %}<img
+                        src="{{ logo }}"
+                        alt="{{ name }}"
+                        loading="lazy"
+                    />
+                    {% else %}{{ logo }}{% endif %}
+                </div>
+                <span class="marquee-item-name">{{ name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- ─── ВОЗМОЖНОСТИ ───────────────────────────────────── -->
+<section class="section section-dark">
+    <div class="container">
+        <div style="max-width: 580px">
+            <div class="section-label animate-on-scroll">Возможности</div>
+            <h2 class="section-title animate-on-scroll">
+                Что умеет<br />JARVIS
+            </h2>
+            <p class="section-sub animate-on-scroll">
+                Полноценный AI-ассистент для ежедневного управления компьютером
+                голосом и текстом
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card animate-on-scroll animate-delay-1">
+                <div class="feature-card-num">01</div>
+                <div class="feature-icon">🤖</div>
+                <div class="feature-title">AI на русском</div>
+                <p class="feature-text">
+                    GigaChat от Сбера без VPN. Groq и Mistral AI в качестве
+                    резервных. Вшитый ключ — работает из коробки.
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll animate-delay-2">
+                <div class="feature-card-num">02</div>
+                <div class="feature-icon">🗣️</div>
+                <div class="feature-title">Wake-Word</div>
+                <p class="feature-text">
+                    Скажи «Джарвис» — ассистент слушает. Распознавание через
+                    Vosk работает полностью офлайн.
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll animate-delay-3">
+                <div class="feature-card-num">03</div>
+                <div class="feature-icon">🎵</div>
+                <div class="feature-title">6 TTS движков</div>
+                <p class="feature-text">
+                    Edge TTS, ElevenLabs, Coqui XTTS, Fish Audio, Yandex
+                    SpeechKit, Silero — выбери голос на вкус.
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll animate-delay-1">
+                <div class="feature-card-num">04</div>
+                <div class="feature-icon">💻</div>
+                <div class="feature-title">Управление ПК</div>
+                <p class="feature-text">
+                    Открывай программы, делай скриншоты, запускай сценарии одним
+                    голосовым командой.
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll animate-delay-2">
+                <div class="feature-card-num">05</div>
+                <div class="feature-icon">🎮</div>
+                <div class="feature-title">Discord Rich Presence</div>
+                <p class="feature-text">
+                    Показывает статус JARVIS в Discord в реальном времени. Пусть
+                    все знают — у тебя есть ИИ-ассистент.
+                </p>
+            </div>
+            <div class="feature-card animate-on-scroll animate-delay-3">
+                <div class="feature-card-num">06</div>
+                <div class="feature-icon">🎨</div>
+                <div class="feature-title">5 тем оформления</div>
+                <p class="feature-text">
+                    Синяя, красная, розовая, фиолетовая и светлая темы для
+                    WebView UI. Полная кастомизация интерфейса.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── ОБНОВЛЕНИЯ ────────────────────────────────────── -->
+<section class="section">
+    <div class="container">
+        <div style="max-width: 580px; margin-bottom: 0">
+            <div class="section-label animate-on-scroll">История версий</div>
+            <h2 class="section-title animate-on-scroll">Обновления</h2>
+            <p class="section-sub animate-on-scroll">
+                Последние изменения и улучшения JARVIS AI Assistant
+            </p>
+        </div>
+
+        <div class="updates-timeline">
+            <div class="update-item animate-on-scroll">
+                <div class="update-version">
+                    <span class="update-version-tag">v22.0</span>
+                    <span class="update-version-badge">Текущая</span>
+                </div>
+                <div class="update-date">15 мая 2025</div>
+                <div class="update-changes">
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span
+                            >Интеграция GigaChat от Сбера — AI без VPN, русский
+                            язык</span
+                        >
+                    </div>
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span
+                            >Миграция аудиосистемы с PyAudio на
+                            sounddevice</span
+                        >
+                    </div>
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span>Добавлена поддержка Fish Audio TTS</span>
+                    </div>
+                    <div class="update-change imp">
+                        <div class="update-change-dot"></div>
+                        <span>Ускорение Wake-Word активации в 2 раза</span>
+                    </div>
+                    <div class="update-change imp">
+                        <div class="update-change-dot"></div>
+                        <span>Оптимизация использования памяти</span>
+                    </div>
+                    <div class="update-change fix">
+                        <div class="update-change-dot"></div>
+                        <span>Исправлена совместимость с Windows 11 24H2</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-item animate-on-scroll">
+                <div class="update-version">
+                    <span class="update-version-tag">v21.0</span>
+                </div>
+                <div class="update-date">3 марта 2025</div>
+                <div class="update-changes">
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span
+                            >Поддержка Coqui XTTS v2 — клонирование голоса</span
+                        >
+                    </div>
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span>Голосовой пакет Якубович (Поле чудес)</span>
+                    </div>
+                    <div class="update-change imp">
+                        <div class="update-change-dot"></div>
+                        <span>Новый WebView интерфейс с 5 темами</span>
+                    </div>
+                    <div class="update-change fix">
+                        <div class="update-change-dot"></div>
+                        <span
+                            >Исправлены утечки памяти при длительной
+                            работе</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-item animate-on-scroll">
+                <div class="update-version">
+                    <span class="update-version-tag">v20.0</span>
+                </div>
+                <div class="update-date">18 января 2025</div>
+                <div class="update-changes">
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span>Discord Rich Presence интеграция</span>
+                    </div>
+                    <div class="update-change new">
+                        <div class="update-change-dot"></div>
+                        <span
+                            >Система сценариев — пакетный запуск программ</span
+                        >
+                    </div>
+                    <div class="update-change imp">
+                        <div class="update-change-dot"></div>
+                        <span>Переход на Vosk для офлайн распознавания</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── ПОСЛЕДНИЕ НОВОСТИ ─────────────────────────────── -->
+{% if latest_news %}
+<section class="section section-dark">
+    <div class="container">
+        <div class="d-flex justify-between align-center flex-wrap gap-2 mb-3">
+            <div>
+                <div class="section-label animate-on-scroll">
+                    От разработчика
+                </div>
+                <h2 class="section-title animate-on-scroll">Новости</h2>
+            </div>
+            <a
+                href="{{ url_for('news') }}"
+                class="btn btn-secondary btn-sm animate-on-scroll"
+                >Все новости →</a
+            >
+        </div>
+        <div class="news-grid">
+            {% for article in latest_news %}
+            <div
+                class="news-card animate-on-scroll animate-delay-{{ loop.index }}"
+            >
+                {% if article['image_url'] %}
+                <img
+                    src="{{ article['image_url'] }}"
+                    alt="{{ article['title'] }}"
+                    class="news-card-img"
+                />
+                {% else %}
+                <div class="news-card-img-placeholder">📰</div>
+                {% endif %}
+                <div class="news-card-body">
+                    <div class="news-card-meta">
+                        {{ article['created_at'][:10] }} · {{ article['author']
+                        }}
+                    </div>
+                    <div class="news-card-title">{{ article['title'] }}</div>
+                    {% if article['excerpt'] %}
+                    <p class="news-card-excerpt">{{ article['excerpt'] }}</p>
+                    {% endif %}
+                    <div class="news-card-footer">
+                        <a
+                            href="{{ url_for('news_detail', nid=article['id']) }}"
+                            class="btn btn-secondary btn-sm"
+                            >Читать →</a
+                        >
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ─── ПОДДЕРЖАТЬ ПРОЕКТ ─────────────────────────────── -->
+<section class="support-section">
+    <div class="container animate-on-scroll">
+        <div class="support-icon">♥</div>
+        <h2 class="support-title">Поддержи JARVIS</h2>
+        <p class="support-sub">
+            JARVIS разрабатывается одним человеком и распространяется бесплатно.
+            Если проект полезен — поддержи его на Boosty.
+        </p>
+        <div class="support-benefits">
+            <div class="support-benefit">⚡ Ускорит разработку</div>
+            <div class="support-benefit">🚀 Новые функции быстрее</div>
+            <div class="support-benefit">🐛 Больше исправлений</div>
+            <div class="support-benefit">💬 Поддержка сообщества</div>
+        </div>
+        <a
+            href="https://boosty.to/photoshop24/donate"
+            target="_blank"
+            rel="noopener"
+            class="btn btn-support btn-lg"
+        >
+            ♥ Поддержать на Boosty
+        </a>
+        <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text3)">
+            Любая сумма имеет значение · Boosty.to
+        </p>
+    </div>
+</section>
+
+<!-- ─── CTA ───────────────────────────────────────────── -->
+<section class="cta-section">
+    <div class="container animate-on-scroll">
+        <h2 class="cta-title">Готов попробовать?</h2>
+        <p
+            class="section-sub"
+            style="margin: 1rem auto 2.5rem; text-align: center"
+        >
+            Установка занимает 2 минуты. GigaChat работает без VPN и
+            регистрации.
+        </p>
+        <div class="hero-actions">
+            <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg"
+                >⬇ Скачать JARVIS v22.0</a
+            >
+            <a href="{{ url_for('forum') }}" class="btn btn-secondary btn-lg"
+                >Задать вопрос</a
+            >
+        </div>
+    </div>
+</section>
+
+{% endblock %}

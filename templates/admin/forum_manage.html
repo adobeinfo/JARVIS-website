@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Форум — JARVIS Admin{% endblock %}
+{% block content %}
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-logo">JARVIS ADMIN</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item"><span class="admin-nav-icon">📊</span> Дашборд</a>
+    <a href="{{ url_for('admin_news') }}" class="admin-nav-item"><span class="admin-nav-icon">📰</span> Новости</a>
+    <a href="{{ url_for('admin_forum') }}" class="admin-nav-item active"><span class="admin-nav-icon">💬</span> Форум</a>
+    <hr style="border-color:var(--border);margin:1rem 1.5rem"/>
+    <a href="{{ url_for('index') }}" class="admin-nav-item"><span class="admin-nav-icon">🌐</span> На сайт</a>
+    <a href="{{ url_for('admin_logout') }}" class="admin-nav-item" style="color:var(--accent-red)"><span class="admin-nav-icon">🚪</span> Выйти</a>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-page-title">Управление форумом</div>
+
+    <!-- Добавить категорию -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin-bottom:2rem">
+      <div style="font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;
+                  color:var(--text-muted);margin-bottom:1rem">Добавить категорию</div>
+      <form method="POST" action="{{ url_for('admin_forum_cat_create') }}">
+        <div class="d-flex gap-2 flex-wrap align-center">
+          <input type="text" name="name" class="form-control" placeholder="Название" required maxlength="100"
+                 style="flex:2;min-width:180px"/>
+          <input type="text" name="description" class="form-control" placeholder="Описание" maxlength="200"
+                 style="flex:3;min-width:180px"/>
+          <input type="text" name="icon" class="form-control" placeholder="💬" maxlength="4"
+                 style="width:70px;flex:none;text-align:center"/>
+          <button type="submit" class="btn btn-primary btn-sm" style="flex:none">+ Создать</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Список категорий -->
+    <div style="font-family:'Oswald',sans-serif;font-size:.75rem;letter-spacing:3px;text-transform:uppercase;
+                color:var(--text-muted);margin-bottom:1rem">Категории</div>
+    <div class="admin-table-wrap" style="margin-bottom:2rem">
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Иконка</th><th>Название</th><th>Описание</th><th>Тем</th><th>Действие</th></tr></thead>
+        <tbody>
+          {% for cat in categories %}
+          <tr>
+            <td>{{ cat['id'] }}</td>
+            <td style="font-size:1.3rem">{{ cat['icon'] }}</td>
+            <td><a href="{{ url_for('forum_category', cat_id=cat['id']) }}" style="color:var(--accent)">{{ cat['name'] }}</a></td>
+            <td>{{ cat['description'] }}</td>
+            <td>{{ cat['post_count'] }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('admin_forum_cat_delete', cid=cat['id']) }}"
+                    onsubmit="return confirm('Удалить категорию и все её темы?')">
+                <button type="submit" class="btn btn-danger btn-xs">✕ Удалить</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">Категорий нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Последние посты -->
+    <div style="font-family:'Oswald',sans-serif;font-size:.75rem;letter-spacing:3px;text-transform:uppercase;
+                color:var(--text-muted);margin-bottom:1rem">Последние темы</div>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Заголовок</th><th>Категория</th><th>Автор</th><th>Дата</th><th>Просм.</th><th>Действие</th></tr></thead>
+        <tbody>
+          {% for post in recent_posts %}
+          <tr>
+            <td>{{ post['id'] }}</td>
+            <td><a href="{{ url_for('forum_post', cat_id=post['category_id'], post_id=post['id']) }}" style="color:var(--accent)">{{ post['title'][:50] }}</a></td>
+            <td>{{ post['cat_name'] }}</td>
+            <td>{{ post['author_name'] }}</td>
+            <td>{{ post['created_at'][:10] }}</td>
+            <td>{{ post['views'] }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('admin_forum_post_delete', pid=post['id']) }}"
+                    onsubmit="return confirm('Удалить тему?')">
+                <button type="submit" class="btn btn-danger btn-xs">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem">Тем нет</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+{% endblock %}

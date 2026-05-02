@@ -1,0 +1,77 @@
+{% extends 'base.html' %} {% block title %}Новая тема — {{ category['name'] }}{%
+endblock %} {% block content %}
+
+<div class="page-header">
+    <div class="page-header-inner">
+        <div class="breadcrumb">
+            <a href="{{ url_for('forum') }}">Форум</a>
+            <span class="breadcrumb-sep">/</span>
+            <a href="{{ url_for('forum_category', cat_id=category['id']) }}"
+                >{{ category['name'] }}</a
+            >
+            <span class="breadcrumb-sep">/</span>
+            <span style="color: var(--text-secondary)">Новая тема</span>
+        </div>
+        <h1 class="page-header-title">Новая тема</h1>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" style="max-width: 720px">
+        <div
+            style="
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                padding: 2rem;
+            "
+        >
+            <form method="POST" action="">
+                <div class="form-group">
+                    <label class="form-label">Ваше имя</label>
+                    <input
+                        type="text"
+                        name="author_name"
+                        class="form-control"
+                        placeholder="Аноним"
+                        maxlength="60"
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Заголовок темы *</label>
+                    <input
+                        type="text"
+                        name="title"
+                        class="form-control"
+                        placeholder="Введите заголовок..."
+                        maxlength="200"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Текст сообщения *</label>
+                    <textarea
+                        name="content"
+                        class="form-control"
+                        rows="8"
+                        placeholder="Опишите вашу тему подробно..."
+                        required
+                        maxlength="10000"
+                    ></textarea>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary">
+                        Создать тему
+                    </button>
+                    <a
+                        href="{{ url_for('forum_category', cat_id=category['id']) }}"
+                        class="btn btn-secondary"
+                        >Отмена</a
+                    >
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

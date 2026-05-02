@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ article['title'] }} — JARVIS{% endblock %}
+{% block content %}
+
+{% if article['image_url'] %}
+<img src="{{ article['image_url'] }}" alt="{{ article['title'] }}" class="article-cover"/>
+{% endif %}
+
+<div class="article-header" {% if not article['image_url'] %}style="padding-top:calc(var(--nav-height) + 3rem)"{% endif %}>
+  <div class="breadcrumb" style="justify-content:center">
+    <a href="{{ url_for('index') }}">Главная</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="{{ url_for('news') }}">Новости</a>
+    <span class="breadcrumb-sep">/</span>
+    <span style="color:var(--text-secondary)">{{ article['title'][:40] }}...</span>
+  </div>
+  <div class="section-label" style="margin-top:1rem">{{ article['created_at'][:10] }} · {{ article['author'] }}</div>
+  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);letter-spacing:3px;margin-top:.5rem">
+    {{ article['title'] }}
+  </h1>
+</div>
+
+<div class="article-body">
+  {{ article['content'] | safe }}
+  <hr class="divider"/>
+  <a href="{{ url_for('news') }}" class="btn btn-secondary btn-sm">← Все новости</a>
+</div>
+
+{% endblock %}

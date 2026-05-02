@@ -1,0 +1,66 @@
+{% extends 'base.html' %} {% block title %}Новости — JARVIS{% endblock %} {%
+block content %}
+
+<div class="page-header">
+    <div class="page-header-inner">
+        <div class="page-header-label">Обновления проекта</div>
+        <h1 class="page-header-title">Новости</h1>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        {% if news_list %}
+        <div class="news-grid">
+            {% for article in news_list %}
+            <div class="news-card animate-on-scroll">
+                {% if article['image_url'] %}
+                <img
+                    src="{{ article['image_url'] }}"
+                    alt="{{ article['title'] }}"
+                    class="news-card-img"
+                />
+                {% else %}
+                <div class="news-card-img-placeholder">📰</div>
+                {% endif %}
+                <div class="news-card-body">
+                    <div class="news-card-meta">
+                        {{ article['created_at'][:10] }} · {{ article['author']
+                        }}
+                    </div>
+                    <div class="news-card-title">{{ article['title'] }}</div>
+                    {% if article['excerpt'] %}
+                    <p class="news-card-excerpt">{{ article['excerpt'] }}</p>
+                    {% endif %}
+                    <div class="news-card-footer">
+                        <a
+                            href="{{ url_for('news_detail', nid=article['id']) }}"
+                            class="btn btn-secondary btn-sm"
+                            >Читать →</a
+                        >
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div
+            class="text-center"
+            style="padding: 4rem 0; color: var(--text-muted)"
+        >
+            <div style="font-size: 3rem; margin-bottom: 1rem">📰</div>
+            <div
+                style="
+                    font-family: &quot;Oswald&quot;, sans-serif;
+                    font-size: 1.2rem;
+                    letter-spacing: 2px;
+                "
+            >
+                Новостей пока нет
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
