@@ -15,7 +15,17 @@ app.secret_key = os.environ.get("SECRET_KEY", "jarvis-rockstar-secret-2024")
 with app.app_context():
     init_db()
 
-SETUP_FILE = os.path.join(os.path.dirname(__file__), "..", "setup_output", "JARVIS_Setup_v22.exe")
+# Ссылка на скачивание
+# Вставь сюда свою ссылку (Яндекс Диск / Google Drive / Telegram)
+# Или установи переменную среды DOWNLOAD_URL на Railway
+GITHUB_RELEASE_URL = os.environ.get(
+    "DOWNLOAD_URL",
+    ""  # Здесь вставь ссылку напрямую: если она пустая, используется локальный файл
+)
+
+# Локальный путь (для локальной разработки)
+_HERE = os.path.dirname(os.path.abspath(__file__))
+SETUP_FILE = os.path.abspath(os.path.join(_HERE, "..", "setup_output", "JARVIS_Setup_v22.exe"))
 
 GIGACHAT_AUTH_KEY = "MDE5ZGU5ZWUtZTQ0Ni03YzZlLWI2MTAtOWY3NDYyMjVhZWYwOmQyNjZlNzVhLTA3YTEtNDJmMi04OGU3LTI5NTA1MzNkZjAxYw=="
 
@@ -157,16 +167,26 @@ def news_detail(nid):
 
 @app.route("/download")
 def download():
-    exists = os.path.isfile(SETUP_FILE)
-    size_mb = round(os.path.getsize(SETUP_FILE) / 1024 / 1024, 1) if exists else 0
-    return render_template("download.html", file_exists=exists, size_mb=size_mb)
+    local_exists = os.path.isfile(SETUP_FILE)
+    has_url      = bool(GITHUB_RELEASE_URL and GITHUB_RELEASE_URL.strip())
+
+    # Размер файла
+    if local_exists:
+        size_mb = round(os.path.getsize(SETUP_FILE) / 1024 / 1024, 1)
+    else:
+        size_mb = 1638  # 1.6 ГБ по умолчанию
+
+    # Скачивание доступно если: есть локальный файл ИЛИ есть URL
+    file_available = local_exists or has_url
+
+    return render_template("download.html",
+                           file_exists=file_available,
+                           size_mb=size_mb,
+                           github_url=GITHUB_RELEASE_URL if has_url and not local_exists else None)
 
 
 @app.route("/download/file")
 def download_file():
-    if not os.path.isfile(SETUP_FILE):
-        flash("Файл установщика временно недоступен.", "error")
-        return redirect(url_for("download"))
     # Трекинг скачивания
     try:
         import hashlib
@@ -177,11 +197,21 @@ def download_file():
         db.commit()
     except Exception:
         pass
-    return send_file(
-        SETUP_FILE,
-        as_attachment=True,
-        download_name="JARVIS_Setup_v22.exe"
-    )
+
+    # Если файл есть локально — отдаём напрямую
+    if os.path.isfile(SETUP_FILE):
+        return send_file(
+            SETUP_FILE,
+            as_attachment=True,
+            download_name="JARVIS_Setup_v22.exe"
+        )
+
+    # Иначе — редирект на GitHub Releases
+    if "YOUR_USERNAME" not in GITHUB_RELEASE_URL:
+        return redirect(GITHUB_RELEASE_URL)
+
+    flash("Ссылка для скачивания не настроена. Свяжитесь с администратором.", "error")
+    return redirect(url_for("download"))
 
 
 # ── Форум ──────────────────────────────────────────────────────────────────────
@@ -534,6 +564,32 @@ def admin_forum_reply_delete(rid):
 
 # ─── 404 ───────────────────────────────────────────────────────────────────────
 # ═══ AI CHAT API ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/online")
+def api_online():
+    """Счётчик онлайн: считает уникальных посетителей за последние 3 минуты."""
+    import time, hashlib
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+    db = get_conn()
+    # Обновляем/вставляем last_seen
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS online_users (
+            ip_hash TEXT PRIMARY KEY,
+            last_seen REAL
+        )
+    """)
+    db.execute(
+        "INSERT INTO online_users (ip_hash, last_seen) VALUES (?, ?) "
+        "ON CONFLICT(ip_hash) DO UPDATE SET last_seen=excluded.last_seen",
+        (ip_hash, time.time())
+    )
+    # Чистим старых (> 3 минут)
+    db.execute("DELETE FROM online_users WHERE last_seen < ?", (time.time() - 180,))
+    count = db.execute("SELECT COUNT(*) FROM online_users").fetchone()[0]
+    db.commit()
+    return jsonify({"online": count})
+
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
