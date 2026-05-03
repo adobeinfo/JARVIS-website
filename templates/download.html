@@ -4,56 +4,148 @@ block content %}
 <div class="download-hero">
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
+
     <div class="download-box animate-on-scroll">
         <div class="section-label">Последний релиз</div>
         <div class="download-version">v22.0</div>
+
         <div class="download-info">
             JARVIS AI Assistant для Windows 10/11<br />
-            {% if file_exists %} Размер: <strong>{{ size_mb }} МБ</strong> ·
-            Установщик {% else %}
-            <span style="color: var(--accent-red)"
-                >⚠ Файл временно недоступен</span
-            >
-            {% endif %}
+            Размер: <strong>{{ size_mb }} МБ</strong> &nbsp;·&nbsp; Установщик
         </div>
 
-        {% if file_exists %}
+        <!-- Кнопка скачать -->
+        {% if github_url %} {# Railway/продакшн: файл на GitHub Releases #}
         <a
             href="{{ url_for('download_file') }}"
             class="btn btn-primary"
             style="
                 width: 100%;
                 justify-content: center;
-                font-size: 1rem;
-                padding: 1rem;
+                font-size: 1.05rem;
+                padding: 1.1rem;
+                gap: 0.7rem;
+            "
+        >
+            ⬇ Скачать JARVIS_Setup_v22.exe
+        </a>
+        <div
+            style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                margin-top: 0.8rem;
+                font-size: 0.78rem;
+                color: var(--text3);
+            "
+        >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+                />
+            </svg>
+            GitHub Releases · Бесплатно · Без рекламы
+        </div>
+        {% else %} {# Локально: отдаём файл напрямую #}
+        <a
+            href="{{ url_for('download_file') }}"
+            class="btn btn-primary"
+            style="
+                width: 100%;
+                justify-content: center;
+                font-size: 1.05rem;
+                padding: 1.1rem;
             "
         >
             ⬇ Скачать JARVIS_Setup_v22.exe
         </a>
         <p
             style="
-                font-size: 0.8rem;
-                color: var(--text-muted);
+                font-size: 0.78rem;
+                color: var(--text3);
                 margin-top: 0.8rem;
+                text-align: center;
             "
         >
             Бесплатно · Без рекламы · Без подписок
         </p>
-        {% else %}
-        <div
-            style="
-                background: rgba(192, 57, 43, 0.1);
-                border: 1px solid var(--accent-red);
-                border-radius: 4px;
-                padding: 1rem;
-                color: #e74c3c;
-            "
-        >
-            Файл установщика временно недоступен. Попробуйте позже.
-        </div>
         {% endif %}
 
-        <div class="requirements">
+        <!-- Доверительные значки -->
+        <div
+            style="
+                display: flex;
+                gap: 0.6rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 1.2rem;
+            "
+        >
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    font-size: 0.72rem;
+                    color: var(--text3);
+                    background: var(--bg2);
+                    border: 1px solid var(--border);
+                    padding: 0.35rem 0.7rem;
+                    border-radius: 20px;
+                "
+            >
+                ✅ Без вирусов
+            </div>
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    font-size: 0.72rem;
+                    color: var(--text3);
+                    background: var(--bg2);
+                    border: 1px solid var(--border);
+                    padding: 0.35rem 0.7rem;
+                    border-radius: 20px;
+                "
+            >
+                🔒 Безопасный
+            </div>
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    font-size: 0.72rem;
+                    color: var(--text3);
+                    background: var(--bg2);
+                    border: 1px solid var(--border);
+                    padding: 0.35rem 0.7rem;
+                    border-radius: 20px;
+                "
+            >
+                💰 Бесплатно
+            </div>
+            <div
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    font-size: 0.72rem;
+                    color: var(--text3);
+                    background: var(--bg2);
+                    border: 1px solid var(--border);
+                    padding: 0.35rem 0.7rem;
+                    border-radius: 20px;
+                "
+            >
+                🇷🇺 Русский язык
+            </div>
+        </div>
+
+        <!-- Системные требования -->
+        <div class="requirements" style="margin-top: 1.5rem">
             <h4>Системные требования</h4>
             <div class="req-item">
                 <span class="req-icon">🖥️</span> Windows 10 / 11 (64-bit)

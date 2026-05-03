@@ -12,9 +12,39 @@
         <h1 class="hero-title">JARV<span class="accent">IS</span></h1>
 
         <p class="hero-subtitle">
-            Персональный AI-ассистент с голосовым управлением.<br />
-            GigaChat без VPN. Русский язык. Полностью бесплатно.
+            <span id="typewriter"></span><span class="tw-cursor">|</span>
         </p>
+
+        <!-- Онлайн счётчик -->
+        <div
+            id="onlineBar"
+            style="
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-family: &quot;Oswald&quot;, sans-serif;
+                font-size: 0.7rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                color: var(--text3);
+                margin-bottom: 1.5rem;
+                opacity: 0;
+                transition: opacity 0.5s;
+            "
+        >
+            <span
+                style="
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: #22c55e;
+                    box-shadow: 0 0 6px #22c55e;
+                    flex-shrink: 0;
+                    animation: pulse-dot 2s ease-in-out infinite;
+                "
+            ></span>
+            <span id="onlineCount">1</span> человек онлайн
+        </div>
 
         <div class="hero-actions">
             <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">
@@ -174,7 +204,238 @@
     </div>
 </section>
 
-<!-- ─── ОБНОВЛЕНИЯ ────────────────────────────────────── -->
+<!-- ─── ТЕРМИНАЛ ДЕМО ─────────────────────────── -->
+<section class="section" style="background: var(--bg); padding-top: 0">
+    <div class="container">
+        <div style="max-width: 760px; margin: 0 auto">
+            <!-- Заголовок -->
+            <div
+                class="animate-on-scroll"
+                style="text-align: center; margin-bottom: 2rem"
+            >
+                <div class="section-label" style="justify-content: center">
+                    Демо в реальном времени
+                </div>
+                <h2 class="section-title">Терминал JARVIS</h2>
+                <p class="section-sub" style="margin: 0 auto">
+                    Напечатай команду и посмотри как отвечает JARVIS
+                </p>
+            </div>
+
+            <!-- Окно терминала -->
+            <div
+                class="animate-on-scroll"
+                id="demoTerminal"
+                style="
+                    background: #06090f;
+                    border: 1px solid var(--border2);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow:
+                        0 32px 64px rgba(0, 0, 0, 0.6),
+                        0 0 0 1px rgba(59, 130, 246, 0.1);
+                "
+            >
+                <!-- Titlebar -->
+                <div
+                    style="
+                        background: #0a0f1a;
+                        padding: 0.7rem 1rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.8rem;
+                        border-bottom: 1px solid var(--border);
+                    "
+                >
+                    <div style="display: flex; gap: 0.4rem">
+                        <div
+                            style="
+                                width: 11px;
+                                height: 11px;
+                                border-radius: 50%;
+                                background: #ff5f57;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                width: 11px;
+                                height: 11px;
+                                border-radius: 50%;
+                                background: #febc2e;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                width: 11px;
+                                height: 11px;
+                                border-radius: 50%;
+                                background: #28c840;
+                            "
+                        ></div>
+                    </div>
+                    <div
+                        style="
+                            font-family: &quot;Oswald&quot;, sans-serif;
+                            font-size: 0.7rem;
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                            color: var(--text3);
+                            flex: 1;
+                            text-align: center;
+                        "
+                    >
+                        JARVIS AI Terminal
+                    </div>
+                    <button
+                        onclick="clearTerminal()"
+                        style="
+                            background: none;
+                            border: none;
+                            color: var(--text3);
+                            cursor: pointer;
+                            font-size: 0.7rem;
+                            font-family: &quot;Oswald&quot;, sans-serif;
+                            letter-spacing: 1px;
+                            text-transform: uppercase;
+                            transition: color 0.2s;
+                        "
+                        onmouseover="this.style.color = '#fff'"
+                        onmouseout="this.style.color = ''"
+                    >
+                        ✕ Очистить
+                    </button>
+                </div>
+
+                <!-- Вывод -->
+                <div
+                    id="termOutput"
+                    style="
+                        padding: 1rem 1.2rem;
+                        min-height: 220px;
+                        max-height: 320px;
+                        overflow-y: auto;
+                        font-family: &quot;Courier New&quot;, monospace;
+                        font-size: 0.82rem;
+                        line-height: 1.7;
+                        color: #8899b4;
+                    "
+                >
+                    <div style="color: #3b82f6">
+                        [JARVIS] Система готова. Введите команду или выберите из
+                        списка ниже. &nbsp;️
+                    </div>
+                </div>
+
+                <!-- Быстрые команды -->
+                <div
+                    style="
+                        padding: 0.6rem 1rem;
+                        border-top: 1px solid var(--border);
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 0.4rem;
+                    "
+                >
+                    {% for cmd in ['привет', 'что умеешь?', 'открой браузер',
+                    'сделай скриншот', 'который час?', 'расскажи шутку',
+                    'выключи компьютер', 'статус системы'] %}
+                    <button
+                        onclick="termSend('{{ cmd }}')"
+                        style="
+                            font-family: &quot;Oswald&quot;, sans-serif;
+                            font-size: 0.68rem;
+                            letter-spacing: 1px;
+                            background: rgba(59, 130, 246, 0.08);
+                            border: 1px solid rgba(59, 130, 246, 0.2);
+                            color: var(--cyan);
+                            padding: 0.28rem 0.65rem;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                            white-space: nowrap;
+                        "
+                        onmouseover="
+                            this.style.background = 'rgba(59,130,246,.18)'
+                        "
+                        onmouseout="
+                            this.style.background = 'rgba(59,130,246,.08)'
+                        "
+                    >
+                        {{ cmd }}
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <!-- Ввод -->
+                <div
+                    style="
+                        padding: 0.7rem 1rem;
+                        border-top: 1px solid var(--border);
+                        display: flex;
+                        align-items: center;
+                        gap: 0.6rem;
+                        background: rgba(59, 130, 246, 0.03);
+                    "
+                >
+                    <span
+                        style="
+                            color: #3b82f6;
+                            font-family: &quot;Courier New&quot;, monospace;
+                            font-size: 0.82rem;
+                            flex-shrink: 0;
+                        "
+                        >jarvis@ai:~$</span
+                    >
+                    <input
+                        id="termInput"
+                        type="text"
+                        placeholder="Введите команду..."
+                        onkeydown="
+                            if (event.key === 'Enter') termSend(this.value);
+                        "
+                        style="
+                            flex: 1;
+                            background: none;
+                            border: none;
+                            outline: none;
+                            font-family: &quot;Courier New&quot;, monospace;
+                            font-size: 0.82rem;
+                            color: #fff;
+                            caret-color: #3b82f6;
+                        "
+                    />
+                    <button
+                        onclick="
+                            termSend(document.getElementById('termInput').value)
+                        "
+                        style="
+                            background: linear-gradient(
+                                135deg,
+                                #3b82f6,
+                                #1d4ed8
+                            );
+                            border: none;
+                            color: #fff;
+                            padding: 0.35rem 0.8rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 0.72rem;
+                            font-family: &quot;Oswald&quot;, sans-serif;
+                            letter-spacing: 1px;
+                            transition: opacity 0.2s;
+                        "
+                        onmouseover="this.style.opacity = '.8'"
+                        onmouseout="this.style.opacity = '1'"
+                    >
+                        Ввод
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── ОБНОВЛЕНИЯ ───────────────────────────── -->
 <section class="section">
     <div class="container">
         <div style="max-width: 580px; margin-bottom: 0">
@@ -191,7 +452,7 @@
                     <span class="update-version-tag">v22.0</span>
                     <span class="update-version-badge">Текущая</span>
                 </div>
-                <div class="update-date">30 марта 2026</div>
+                <div class="update-date">15 мая 2025</div>
                 <div class="update-changes">
                     <div class="update-change new">
                         <div class="update-change-dot"></div>
@@ -230,7 +491,7 @@
                 <div class="update-version">
                     <span class="update-version-tag">v21.0</span>
                 </div>
-                <div class="update-date">23 марта 2026</div>
+                <div class="update-date">3 марта 2025</div>
                 <div class="update-changes">
                     <div class="update-change new">
                         <div class="update-change-dot"></div>
@@ -260,7 +521,7 @@
                 <div class="update-version">
                     <span class="update-version-tag">v20.0</span>
                 </div>
-                <div class="update-date">12 марта 2026</div>
+                <div class="update-date">18 января 2025</div>
                 <div class="update-changes">
                     <div class="update-change new">
                         <div class="update-change-dot"></div>
