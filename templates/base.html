@@ -14,9 +14,21 @@
             rel="stylesheet"
             href="{{ url_for('static', filename='css/style.css') }}"
         />
+        {% if summer_design %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/summer.css') }}" />
+        {% endif %}
         {% block head %}{% endblock %}
     </head>
-    <body>
+    <body class="{% if summer_design %}summer{% endif %}">
+
+        {% if summer_design %}
+        <div class="summer-banner">
+            <span>☀ Летний режим JARVIS</span>
+            {% if event_active %}
+            <a href="{{ url_for('event_page') }}">🎉 Перейти на эвент →</a>
+            {% endif %}
+        </div>
+        {% endif %}
         <!-- ═══ NAVBAR ══════════════════════════════════════════════ -->
         <nav class="navbar" id="navbar">
             <div class="nav-inner">
@@ -45,6 +57,14 @@
                         class="{{ 'active' if request.endpoint=='download' else '' }}"
                         >Скачать</a
                     >
+                    {% if event_active %}
+                    <a
+                        href="{{ url_for('event_page') }}"
+                        class="nav-event {{ 'active' if request.endpoint=='event_page' else '' }}"
+                        style="background:linear-gradient(90deg,#ff5e62,#ffb347);color:#fff !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;"
+                        >☀ Эвент</a
+                    >
+                    {% endif %}
                 </ul>
 
                 <div class="nav-right">

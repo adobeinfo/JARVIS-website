@@ -65,7 +65,58 @@ CREATE TABLE IF NOT EXISTS forum_replies (
     author_name TEXT DEFAULT 'Аноним',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS site_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS online_users (
+    ip_hash   TEXT PRIMARY KEY,
+    last_seen REAL
+);
+
+CREATE TABLE IF NOT EXISTS event_progress (
+    token              TEXT PRIMARY KEY,
+    ip_hash            TEXT DEFAULT '',
+    beta_code          TEXT DEFAULT '',
+    beta_granted_at    TIMESTAMP,
+    created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS event_secrets (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL,
+    content         TEXT NOT NULL,
+    riddle_question TEXT NOT NULL,
+    riddle_answer   TEXT NOT NULL,
+    unlock_at       TIMESTAMP NOT NULL,
+    sort_order      INTEGER DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS event_secret_unlocks (
+    token       TEXT NOT NULL,
+    secret_id   INTEGER NOT NULL REFERENCES event_secrets(id) ON DELETE CASCADE,
+    unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (token, secret_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_visits_created ON page_visits(created_at);
+CREATE INDEX IF NOT EXISTS idx_posts_cat      ON forum_posts(category_id);
+CREATE INDEX IF NOT EXISTS idx_replies_post   ON forum_replies(post_id);
+CREATE INDEX IF NOT EXISTS idx_secrets_unlock ON event_secrets(unlock_at);
+CREATE INDEX IF NOT EXISTS idx_unlocks_token  ON event_secret_unlocks(token);
 """
+
+DEFAULT_SETTINGS = {
+    "summer_design":      "0",
+    "event_active":       "0",
+    "event_title":        "🕰 Капсула времени · JARVIS V2",
+    "event_text":         "26 мая 2026 — релиз JARVIS V2. До этого момента каждый день в 18:00 МСК открывается секрет. Разгадай загадку и узнай тизер новой фичи. Раскрой все секреты — получи бета-доступ.",
+    "event_release_at":   "2026-05-26 18:00:00",
+    "event_release_title":"JARVIS V2",
+}
 
 
 def get_db():
@@ -85,6 +136,13 @@ def init_db():
     if cur.fetchone()[0] == 0:
         _seed(conn)
 
+    # Дефолтные настройки (только если ключа ещё нет)
+    for k, v in DEFAULT_SETTINGS.items():
+        conn.execute(
+            "INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)",
+            (k, v),
+        )
+    conn.commit()
     conn.close()
 
 
@@ -140,6 +198,34 @@ def _seed(conn):
             1,
         ),
     )
+
+    # Стартовые секреты эвента-капсулы (тизеры V2)
+    import datetime as _dt
+    base = _dt.datetime(2026, 5, 7, 18, 0, 0)  # с 7 мая по 1 в день
+    secrets = [
+        ("Новый движок диалогов",
+         "<p>В JARVIS V2 встроен <b>контекстный движок памяти</b>: ассистент помнит предыдущие диалоги, ваше имя, любимые программы и расписание. Контекст шифруется и хранится только локально.</p>",
+         "Я помню всё, но никогда не выйду наружу. Что я?", "память"),
+        ("Голос как у тебя",
+         "<p>Появится <b>клонирование голоса</b> на 30 секундах записи через локальный XTTS-v3. JARVIS сможет говорить вашим голосом или голосом близкого человека.</p>",
+         "30 секунд — и я твой двойник. Кто я?", "голос"),
+        ("Зрение",
+         "<p>JARVIS V2 видит экран. Скажи «что на экране?» — и он опишет окно, прочтёт ошибку, найдёт нужную кнопку. Используется локальная мультимодальная модель.</p>",
+         "Я смотрю туда же, куда и ты. Что я делаю?", "вижу"),
+        ("Сценарии без кода",
+         "<p>Визуальный <b>конструктор сценариев</b>: drag-and-drop блоки «когда → если → сделай». Запускай Photoshop, открывай нужные сайты, играй музыку — одним голосом.</p>",
+         "Что мы строим из блоков, не написав ни строчки кода?", "сценарий"),
+        ("Open Source",
+         "<p>Ядро JARVIS V2 будет <b>open-source</b> под MIT. Закрытыми останутся только premium-голоса и интеграции с платными API.</p>",
+         "Свободный, как ветер, и доступен всем. Какой я?", "открытый"),
+    ]
+    for i, (title, content, q, a) in enumerate(secrets):
+        conn.execute(
+            "INSERT INTO event_secrets (title, content, riddle_question, riddle_answer, unlock_at, sort_order) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (title, content, q, a.lower(),
+             (base + _dt.timedelta(days=i*3)).strftime("%Y-%m-%d %H:%M:%S"), i)
+        )
 
     # Стартовые посты на форуме
     conn.execute(

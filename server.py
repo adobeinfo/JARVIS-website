@@ -1,12 +1,16 @@
 import os
+import time
+import uuid
+import random
+import hashlib
 import functools
 import json as _json
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, flash, send_file, g, abort, jsonify
+    url_for, session, flash, send_file, g, abort, jsonify, make_response
 )
 from werkzeug.security import check_password_hash
-from database import get_db, init_db
+from database import get_db, init_db, DEFAULT_SETTINGS
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "jarvis-rockstar-secret-2024")
@@ -130,9 +134,52 @@ def admin_required(f):
     return wrapper
 
 
+# ═══ Settings helpers ══════════════════════════════════════════════════════════
+
+def get_setting(key, default=""):
+    db = get_conn()
+    row = db.execute("SELECT value FROM site_settings WHERE key=?", (key,)).fetchone()
+    return row["value"] if row else default
+
+
+def set_setting(key, value):
+    db = get_conn()
+    db.execute(
+        "INSERT INTO site_settings (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (key, str(value)),
+    )
+    db.commit()
+
+
+def _hash_ip():
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    return hashlib.md5(ip.encode()).hexdigest()[:12]
+
+
+@app.context_processor
+def inject_globals():
+    """Делает summer_design / event_active доступными во всех шаблонах."""
+    try:
+        return {
+            "summer_design": get_setting("summer_design", "0") == "1",
+            "event_active":  get_setting("event_active",  "0") == "1",
+            "event_title":   get_setting("event_title",   DEFAULT_SETTINGS["event_title"]),
+        }
+    except Exception:
+        return {"summer_design": False, "event_active": False, "event_title": ""}
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  ПУБЛИЧНЫЕ МАРШРУТЫ
 # ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/shop-verification-QR2ONd4OmJ.txt")
+def shop_verification():
+    resp = make_response("shop-verification-QR2ONd4OmJ")
+    resp.headers["Content-Type"] = "text/plain; charset=utf-8"
+    return resp
+
 
 @app.route("/")
 def index():
@@ -212,6 +259,196 @@ def download_file():
 
     flash("Ссылка для скачивания не настроена. Свяжитесь с администратором.", "error")
     return redirect(url_for("download"))
+
+
+# ── Эвент: «Капсула времени» ───────────────────────────────────────────────────
+
+import datetime as _dt
+
+
+def _parse_release_at():
+    raw = get_setting("event_release_at", DEFAULT_SETTINGS["event_release_at"])
+    try:
+        return _dt.datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return _dt.datetime.strptime(DEFAULT_SETTINGS["event_release_at"], "%Y-%m-%d %H:%M:%S")
+
+
+def _event_get_or_create():
+    db = get_conn()
+    token = request.cookies.get("event_token") or ""
+    row = None
+    if token:
+        row = db.execute("SELECT * FROM event_progress WHERE token=?", (token,)).fetchone()
+    if not row:
+        token = uuid.uuid4().hex
+        db.execute(
+            "INSERT INTO event_progress (token, ip_hash) VALUES (?, ?)",
+            (token, _hash_ip()),
+        )
+        db.commit()
+        row = db.execute("SELECT * FROM event_progress WHERE token=?", (token,)).fetchone()
+    return token, row
+
+
+def _set_event_cookie(resp, token):
+    resp.set_cookie("event_token", token,
+                    max_age=60 * 60 * 24 * 90, httponly=True, samesite="Lax")
+    return resp
+
+
+def _build_secrets_list(db, token):
+    """Возвращает список секретов с состояниями для текущего пользователя."""
+    secrets = db.execute(
+        "SELECT id, title, content, riddle_question, unlock_at, sort_order "
+        "FROM event_secrets ORDER BY unlock_at, sort_order, id"
+    ).fetchall()
+    unlocked_ids = {r["secret_id"] for r in db.execute(
+        "SELECT secret_id FROM event_secret_unlocks WHERE token=?", (token,)
+    ).fetchall()}
+    now = _dt.datetime.now()
+    out = []
+    for s in secrets:
+        try:
+            ua = _dt.datetime.strptime(s["unlock_at"], "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            ua = now
+        is_unlocked = s["id"] in unlocked_ids
+        is_available = now >= ua
+        out.append({
+            "id":          s["id"],
+            "title":       s["title"],
+            "unlock_at":   s["unlock_at"],
+            "unlock_ts":   int(ua.timestamp()),
+            "available":   is_available,
+            "unlocked":    is_unlocked,
+            "riddle":      s["riddle_question"] if (is_available and not is_unlocked) else "",
+            "content":     s["content"] if is_unlocked else "",
+        })
+    return out
+
+
+def _maybe_grant_beta(db, token):
+    """Если пользователь раскрыл все секреты — выдать бета-код."""
+    total = db.execute("SELECT COUNT(*) FROM event_secrets").fetchone()[0]
+    if total == 0:
+        return None
+    mine = db.execute(
+        "SELECT COUNT(*) FROM event_secret_unlocks WHERE token=?", (token,)
+    ).fetchone()[0]
+    if mine < total:
+        return None
+    row = db.execute("SELECT beta_code FROM event_progress WHERE token=?", (token,)).fetchone()
+    if row and row["beta_code"]:
+        return row["beta_code"]
+    code = "JV2-" + uuid.uuid4().hex[:10].upper()
+    db.execute(
+        "UPDATE event_progress SET beta_code=?, beta_granted_at=CURRENT_TIMESTAMP "
+        "WHERE token=?", (code, token),
+    )
+    db.commit()
+    return code
+
+
+def _event_state(db, token):
+    secrets = _build_secrets_list(db, token)
+    row = db.execute("SELECT beta_code FROM event_progress WHERE token=?", (token,)).fetchone()
+    total = len(secrets)
+    unlocked = sum(1 for s in secrets if s["unlocked"])
+    return {
+        "release_at":     get_setting("event_release_at", DEFAULT_SETTINGS["event_release_at"]),
+        "release_ts":     int(_parse_release_at().timestamp()),
+        "release_title":  get_setting("event_release_title", DEFAULT_SETTINGS["event_release_title"]),
+        "secrets":        secrets,
+        "total":          total,
+        "unlocked_count": unlocked,
+        "beta_code":      (row["beta_code"] if row else "") or "",
+        "now":            int(time.time()),
+    }
+
+
+@app.route("/event")
+def event_page():
+    if get_setting("event_active", "0") != "1":
+        abort(404)
+    db = get_conn()
+    token, _ = _event_get_or_create()
+    state = _event_state(db, token)
+    resp = make_response(render_template("event.html",
+        event_text=get_setting("event_text", DEFAULT_SETTINGS["event_text"]),
+        state=state,
+    ))
+    return _set_event_cookie(resp, token)
+
+
+@app.route("/api/event/state")
+def api_event_state():
+    if get_setting("event_active", "0") != "1":
+        return jsonify({"error": "event_off"}), 404
+    db = get_conn()
+    token, _ = _event_get_or_create()
+    return _set_event_cookie(jsonify(_event_state(db, token)), token)
+
+
+@app.route("/api/event/unlock", methods=["POST"])
+def api_event_unlock():
+    if get_setting("event_active", "0") != "1":
+        return jsonify({"error": "event_off"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        secret_id = int(data.get("secret_id"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "bad_id"}), 400
+    answer = (data.get("answer") or "").strip().lower()
+    if not answer:
+        return jsonify({"error": "empty_answer"}), 400
+
+    db = get_conn()
+    token, _ = _event_get_or_create()
+    s = db.execute(
+        "SELECT id, riddle_answer, unlock_at FROM event_secrets WHERE id=?",
+        (secret_id,),
+    ).fetchone()
+    if not s:
+        return jsonify({"error": "not_found"}), 404
+
+    # Проверка времени
+    try:
+        ua = _dt.datetime.strptime(s["unlock_at"], "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        ua = _dt.datetime.now()
+    if _dt.datetime.now() < ua:
+        return _set_event_cookie(
+            jsonify({**_event_state(db, token), "ok": False, "reason": "locked_time"}), token
+        )
+
+    # Уже разблокирован?
+    already = db.execute(
+        "SELECT 1 FROM event_secret_unlocks WHERE token=? AND secret_id=?",
+        (token, secret_id),
+    ).fetchone()
+    if already:
+        return _set_event_cookie(
+            jsonify({**_event_state(db, token), "ok": True, "reason": "already"}), token
+        )
+
+    # Сравнение ответа (case+space-insensitive, без пунктуации)
+    correct = s["riddle_answer"].strip().lower()
+    norm = lambda x: ''.join(ch for ch in x if ch.isalnum()).lower()
+    if norm(answer) != norm(correct):
+        return _set_event_cookie(
+            jsonify({**_event_state(db, token), "ok": False, "reason": "wrong"}), token
+        )
+
+    db.execute(
+        "INSERT OR IGNORE INTO event_secret_unlocks (token, secret_id) VALUES (?, ?)",
+        (token, secret_id),
+    )
+    db.commit()
+    _maybe_grant_beta(db, token)
+    return _set_event_cookie(
+        jsonify({**_event_state(db, token), "ok": True}), token
+    )
 
 
 # ── Форум ──────────────────────────────────────────────────────────────────────
@@ -413,6 +650,140 @@ def admin_dashboard():
                            recent_posts=recent_posts,
                            top_pages=top_pages,
                            visits_chart=list(visits_chart))
+
+
+# ── Admin: Настройки сайта ─────────────────────────────────────────────────────
+
+@app.route("/admin/settings", methods=["GET", "POST"])
+@admin_required
+def admin_settings():
+    if request.method == "POST":
+        set_setting("summer_design", "1" if request.form.get("summer_design") else "0")
+        set_setting("event_active",  "1" if request.form.get("event_active")  else "0")
+        set_setting("event_title",   request.form.get("event_title", "").strip()
+                                       or DEFAULT_SETTINGS["event_title"])
+        set_setting("event_text",    request.form.get("event_text",  "").strip()
+                                       or DEFAULT_SETTINGS["event_text"])
+        set_setting("event_release_title",
+                    request.form.get("event_release_title", "").strip()
+                    or DEFAULT_SETTINGS["event_release_title"])
+        # Парсим дату релиза (datetime-local: "YYYY-MM-DDTHH:MM")
+        rel_raw = request.form.get("event_release_at", "").strip()
+        if rel_raw:
+            try:
+                rel = _dt.datetime.fromisoformat(rel_raw)
+                set_setting("event_release_at", rel.strftime("%Y-%m-%d %H:%M:%S"))
+            except ValueError:
+                flash("Неверный формат даты релиза.", "error")
+        flash("Настройки сохранены.", "success")
+        return redirect(url_for("admin_settings"))
+
+    db = get_conn()
+    ev_stats = {
+        "users":         db.execute("SELECT COUNT(*) FROM event_progress").fetchone()[0],
+        "with_beta":     db.execute("SELECT COUNT(*) FROM event_progress WHERE beta_code!=''").fetchone()[0],
+        "secrets_total": db.execute("SELECT COUNT(*) FROM event_secrets").fetchone()[0],
+        "unlocks_total": db.execute("SELECT COUNT(*) FROM event_secret_unlocks").fetchone()[0],
+    }
+    beta_users = db.execute(
+        "SELECT token, beta_code, beta_granted_at FROM event_progress "
+        "WHERE beta_code!='' ORDER BY beta_granted_at DESC LIMIT 50"
+    ).fetchall()
+    # Преобразуем release_at в формат datetime-local для <input>
+    rel_iso = ""
+    try:
+        rel_iso = _parse_release_at().strftime("%Y-%m-%dT%H:%M")
+    except Exception:
+        pass
+    return render_template("admin/settings.html",
+        s={
+            "summer_design":        get_setting("summer_design", "0") == "1",
+            "event_active":         get_setting("event_active",  "0") == "1",
+            "event_title":          get_setting("event_title",   DEFAULT_SETTINGS["event_title"]),
+            "event_text":           get_setting("event_text",    DEFAULT_SETTINGS["event_text"]),
+            "event_release_at":     rel_iso,
+            "event_release_title":  get_setting("event_release_title", DEFAULT_SETTINGS["event_release_title"]),
+        },
+        ev_stats=ev_stats,
+        beta_users=beta_users,
+    )
+
+
+# ── Admin: Секреты эвента ──────────────────────────────────────────────────────
+
+@app.route("/admin/event")
+@admin_required
+def admin_event():
+    db = get_conn()
+    secrets = db.execute(
+        "SELECT s.*, (SELECT COUNT(*) FROM event_secret_unlocks u WHERE u.secret_id=s.id) AS unlocks "
+        "FROM event_secrets s ORDER BY unlock_at, sort_order, id"
+    ).fetchall()
+    return render_template("admin/event_secrets.html", secrets=secrets)
+
+
+@app.route("/admin/event/create", methods=["POST"])
+@admin_required
+def admin_event_create():
+    title    = request.form.get("title", "").strip()
+    content  = request.form.get("content", "").strip()
+    question = request.form.get("riddle_question", "").strip()
+    answer   = request.form.get("riddle_answer", "").strip().lower()
+    unlock   = request.form.get("unlock_at", "").strip()
+    if not (title and content and question and answer and unlock):
+        flash("Заполните все поля.", "error")
+        return redirect(url_for("admin_event"))
+    try:
+        unlock_dt = _dt.datetime.fromisoformat(unlock)
+    except ValueError:
+        flash("Неверная дата открытия.", "error")
+        return redirect(url_for("admin_event"))
+    db = get_conn()
+    db.execute(
+        "INSERT INTO event_secrets (title, content, riddle_question, riddle_answer, unlock_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (title, content, question, answer, unlock_dt.strftime("%Y-%m-%d %H:%M:%S")),
+    )
+    db.commit()
+    flash("Секрет создан.", "success")
+    return redirect(url_for("admin_event"))
+
+
+@app.route("/admin/event/<int:sid>/delete", methods=["POST"])
+@admin_required
+def admin_event_delete(sid):
+    db = get_conn()
+    db.execute("DELETE FROM event_secrets WHERE id=?", (sid,))
+    db.commit()
+    flash("Секрет удалён.", "info")
+    return redirect(url_for("admin_event"))
+
+
+@app.route("/admin/event/<int:sid>/edit", methods=["POST"])
+@admin_required
+def admin_event_edit(sid):
+    title    = request.form.get("title", "").strip()
+    content  = request.form.get("content", "").strip()
+    question = request.form.get("riddle_question", "").strip()
+    answer   = request.form.get("riddle_answer", "").strip().lower()
+    unlock   = request.form.get("unlock_at", "").strip()
+    if not (title and content and question and answer and unlock):
+        flash("Заполните все поля.", "error")
+        return redirect(url_for("admin_event"))
+    try:
+        unlock_dt = _dt.datetime.fromisoformat(unlock)
+    except ValueError:
+        flash("Неверная дата открытия.", "error")
+        return redirect(url_for("admin_event"))
+    db = get_conn()
+    db.execute(
+        "UPDATE event_secrets SET title=?, content=?, riddle_question=?, riddle_answer=?, unlock_at=? "
+        "WHERE id=?",
+        (title, content, question, answer, unlock_dt.strftime("%Y-%m-%d %H:%M:%S"), sid),
+    )
+    db.commit()
+    flash("Секрет обновлён.", "success")
+    return redirect(url_for("admin_event"))
 
 
 # ── Admin: Новости ─────────────────────────────────────────────────────────────
