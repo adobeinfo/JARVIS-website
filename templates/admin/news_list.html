@@ -1,60 +1,67 @@
-{% extends 'base.html' %}
+{% extends 'admin/base.html' %}
 {% block title %}Новости — JARVIS Admin{% endblock %}
+{% block topbar %}Новости{% endblock %}
 {% block content %}
 
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <div class="admin-sidebar-logo">JARVIS ADMIN</div>
-    <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item"><span class="admin-nav-icon">📊</span> Дашборд</a>
-    <a href="{{ url_for('admin_news') }}" class="admin-nav-item active"><span class="admin-nav-icon">📰</span> Новости</a>
-    <a href="{{ url_for('admin_forum') }}" class="admin-nav-item"><span class="admin-nav-icon">💬</span> Форум</a>
-    <a href="{{ url_for('admin_settings') }}" class="admin-nav-item"><span class="admin-nav-icon">⚙</span> Настройки</a>
-    <hr style="border-color:var(--border);margin:1rem 1.5rem"/>
-    <a href="{{ url_for('index') }}" class="admin-nav-item"><span class="admin-nav-icon">🌐</span> На сайт</a>
-    <a href="{{ url_for('admin_logout') }}" class="admin-nav-item" style="color:var(--accent-red)"><span class="admin-nav-icon">🚪</span> Выйти</a>
-  </aside>
+<div class="a-page-head">
+  <div>
+    <h2>Новости</h2>
+    <div class="desc">{{ articles|length }} {% if articles|length == 1 %}статья{% elif articles|length < 5 %}статьи{% else %}статей{% endif %}</div>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary">+ Новая статья</a>
+  </div>
+</div>
 
-  <main class="admin-main">
-    <div class="admin-page-title">
-      Новости
-      <a href="{{ url_for('admin_news_create') }}" class="btn btn-primary btn-sm">+ Добавить</a>
-    </div>
-
-    <div class="admin-table-wrap">
-      <table class="admin-table">
-        <thead>
-          <tr><th>#</th><th>Заголовок</th><th>Автор</th><th>Дата</th><th>Статус</th><th>Действия</th></tr>
-        </thead>
-        <tbody>
-          {% for art in articles %}
-          <tr>
-            <td>{{ art['id'] }}</td>
-            <td><a href="{{ url_for('news_detail', nid=art['id']) }}" style="color:var(--accent)">{{ art['title'][:70] }}</a></td>
-            <td>{{ art['author'] }}</td>
-            <td>{{ art['created_at'][:10] }}</td>
-            <td>
-              {% if art['is_published'] %}
-                <span class="badge badge-success">Опубликовано</span>
-              {% else %}
-                <span class="badge badge-muted">Черновик</span>
-              {% endif %}
-            </td>
-            <td>
-              <div class="d-flex gap-1">
-                <a href="{{ url_for('admin_news_edit', nid=art['id']) }}" class="btn btn-secondary btn-xs">✏ Изменить</a>
-                <form method="POST" action="{{ url_for('admin_news_delete', nid=art['id']) }}" onsubmit="return confirm('Удалить новость?')">
-                  <button type="submit" class="btn btn-danger btn-xs">✕</button>
-                </form>
-              </div>
-            </td>
-          </tr>
+<div class="a-table-wrap">
+  <table class="a-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Заголовок</th>
+        <th>Автор</th>
+        <th>Дата</th>
+        <th>Статус</th>
+        <th style="text-align:right;">Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for art in articles %}
+      <tr>
+        <td style="color:var(--text-3);">{{ art['id'] }}</td>
+        <td>
+          <a href="{{ url_for('news_detail', nid=art['id']) }}" target="_blank"
+             style="color:var(--text);font-weight:500;">
+            {{ art['title'][:80] }}{% if art['title']|length > 80 %}…{% endif %}
+          </a>
+        </td>
+        <td>{{ art['author'] }}</td>
+        <td style="color:var(--text-3);">{{ art['created_at'][:10] }}</td>
+        <td>
+          {% if art['is_published'] %}
+            <span class="a-badge success">● Опубликовано</span>
           {% else %}
-          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">Новостей нет</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </main>
+            <span class="a-badge muted">Черновик</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="actions" style="justify-content:flex-end;">
+            <a href="{{ url_for('admin_news_edit', nid=art['id']) }}"
+               class="a-btn a-btn-secondary a-btn-xs">✏ Изменить</a>
+            <form method="POST" action="{{ url_for('admin_news_delete', nid=art['id']) }}"
+                  onsubmit="return confirm('Удалить новость безвозвратно?')">
+              <button class="a-btn a-btn-danger a-btn-xs" type="submit">✕</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">
+        Новостей пока нет — <a href="{{ url_for('admin_news_create') }}" style="color:var(--accent);">создать первую</a>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% endblock %}

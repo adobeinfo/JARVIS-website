@@ -1,140 +1,123 @@
-{% extends 'base.html' %}
+{% extends 'admin/base.html' %}
 {% block title %}Настройки — JARVIS Admin{% endblock %}
+{% block topbar %}Настройки{% endblock %}
 {% block content %}
 
-<div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-        <div class="admin-sidebar-logo">JARVIS ADMIN</div>
-        <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">📊</span> Дашборд
-        </a>
-        <a href="{{ url_for('admin_news') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">📰</span> Новости
-        </a>
-        <a href="{{ url_for('admin_forum') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">💬</span> Форум
-        </a>
-        <a href="{{ url_for('admin_settings') }}" class="admin-nav-item active">
-            <span class="admin-nav-icon">⚙</span> Настройки
-        </a>
-        <a href="{{ url_for('admin_event') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">📜</span> Секреты эвента
-        </a>
-        <hr style="border-color: var(--border); margin: 1rem 1.5rem" />
-        <a href="{{ url_for('index') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">🌐</span> На сайт
-        </a>
-        <a href="{{ url_for('admin_logout') }}" class="admin-nav-item" style="color: var(--red)">
-            <span class="admin-nav-icon">🚪</span> Выйти
-        </a>
-    </aside>
-
-    <main class="admin-main">
-        <div class="admin-page-title">⚙ Настройки сайта</div>
-
-        <form method="POST" class="admin-card" style="display:grid; gap:1.5rem; max-width:780px;">
-            <div>
-                <h3 style="margin-bottom:.4rem;">☀ Летний дизайн</h3>
-                <p style="color:var(--text3); font-size:.9rem; margin-bottom:.6rem;">
-                    Применяет летнюю тему ко всем страницам сайта (главная + общий стиль).
-                </p>
-                <label class="toggle">
-                    <input type="checkbox" name="summer_design" {% if s.summer_design %}checked{% endif %}>
-                    <span>Включить летнюю тему</span>
-                </label>
-            </div>
-
-            <hr style="border-color:var(--border)">
-
-            <div>
-                <h3 style="margin-bottom:.4rem;">🕰 Эвент «Капсула времени»</h3>
-                <p style="color:var(--text3); font-size:.9rem; margin-bottom:.6rem;">
-                    Открывает страницу <code>/event</code> с обратным отсчётом до релиза и сеткой
-                    секретов. Каждый секрет открывается в указанное время и требует разгадать загадку.
-                    Раскрыл все → бета-код. Управление секретами в разделе
-                    <a href="{{ url_for('admin_event') }}" style="color:var(--accent);">📜 Секреты эвента</a>.
-                </p>
-                <label class="toggle">
-                    <input type="checkbox" name="event_active" {% if s.event_active %}checked{% endif %}>
-                    <span>Включить эвент</span>
-                </label>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
-                    <div>
-                        <label style="font-size:.85rem; color:var(--text3);">Дата релиза (отсчёт идёт до этой даты)</label>
-                        <input type="datetime-local" name="event_release_at" value="{{ s.event_release_at }}"
-                               style="width:100%; padding:.55rem .8rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); margin-top:.3rem;">
-                    </div>
-                    <div>
-                        <label style="font-size:.85rem; color:var(--text3);">Название релиза (большая надпись)</label>
-                        <input type="text" name="event_release_title" value="{{ s.event_release_title }}"
-                               style="width:100%; padding:.55rem .8rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); margin-top:.3rem;">
-                    </div>
-                </div>
-
-                <div style="margin-top:1rem;">
-                    <label style="font-size:.85rem; color:var(--text3);">Заголовок эвента (в навбаре и сверху страницы)</label>
-                    <input type="text" name="event_title" value="{{ s.event_title }}"
-                           style="width:100%; padding:.55rem .8rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); margin-top:.3rem;">
-                </div>
-
-                <div style="margin-top:1rem;">
-                    <label style="font-size:.85rem; color:var(--text3);">Описание эвента</label>
-                    <textarea name="event_text" rows="4"
-                           style="width:100%; padding:.55rem .8rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); margin-top:.3rem; font-family:inherit; resize:vertical;">{{ s.event_text }}</textarea>
-                </div>
-            </div>
-
-            <div>
-                <button type="submit" class="btn-primary"
-                        style="background:var(--accent); color:#000; padding:.7rem 1.6rem; border-radius:8px; border:none; font-weight:700; cursor:pointer;">
-                    💾 Сохранить настройки
-                </button>
-            </div>
-        </form>
-
-        {% if s.event_active %}
-        <div class="admin-card" style="margin-top:1.5rem;">
-            <h3 style="margin-bottom:1rem;">📊 Статистика эвента</h3>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:1rem;">
-                <div><div style="font-size:1.8rem; font-weight:800; color:var(--accent);">{{ ev_stats.users }}</div>
-                     <div style="color:var(--text3); font-size:.8rem;">Участников</div></div>
-                <div><div style="font-size:1.8rem; font-weight:800; color:#10b981;">{{ ev_stats.with_beta }}</div>
-                     <div style="color:var(--text3); font-size:.8rem;">Получили бета-код</div></div>
-                <div><div style="font-size:1.8rem; font-weight:800; color:#f59e0b;">{{ ev_stats.secrets_total }}</div>
-                     <div style="color:var(--text3); font-size:.8rem;">Секретов в капсуле</div></div>
-                <div><div style="font-size:1.8rem; font-weight:800; color:#3ec4ff;">{{ ev_stats.unlocks_total }}</div>
-                     <div style="color:var(--text3); font-size:.8rem;">Разгаданных всего</div></div>
-            </div>
-
-            {% if beta_users %}
-            <h4 style="margin:1.5rem 0 .5rem;">Последние бета-коды</h4>
-            <table style="width:100%; border-collapse:collapse; font-size:.85rem;">
-                <thead><tr style="text-align:left; color:var(--text3);">
-                    <th style="padding:.5rem;">Код</th><th>Когда выдан</th>
-                </tr></thead>
-                <tbody>
-                {% for u in beta_users %}
-                <tr style="border-top:1px solid var(--border);">
-                    <td style="padding:.5rem; font-family:monospace; color:var(--accent);">{{ u.beta_code }}</td>
-                    <td style="color:var(--text3);">{{ u.beta_granted_at }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% endif %}
-        </div>
-        {% endif %}
-    </main>
+<div class="a-page-head">
+  <div>
+    <h2>Настройки сайта</h2>
+    <div class="desc">Глобальные переключатели и параметры эвента</div>
+  </div>
 </div>
 
-<style>
-.toggle { display:inline-flex; align-items:center; gap:.7rem; cursor:pointer; user-select:none; }
-.toggle input { width:48px; height:26px; appearance:none; background:#334; border-radius:999px; position:relative; cursor:pointer; transition:background .2s; }
-.toggle input:checked { background:linear-gradient(90deg, #ffb347, #ff7e5f); }
-.toggle input::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:50%; transition:left .2s; }
-.toggle input:checked::after { left:25px; }
-.toggle span { color:var(--text); font-weight:600; }
-</style>
+<form method="POST" class="a-card" style="max-width:860px;">
+
+  {# ─── Летний дизайн ─── #}
+  <div style="margin-bottom:2rem;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:240px;">
+        <div class="a-card-title-lg" style="margin-bottom:0.4rem;">☀ Летний дизайн</div>
+        <div class="a-help" style="margin:0;">
+          Применяет летнюю тему ко всем страницам сайта. Если включено — также подключается <code>summer.css</code>.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="summer_design" {% if s.summer_design %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--line);margin:1.5rem 0;">
+
+  {# ─── Эвент ─── #}
+  <div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+      <div style="flex:1;min-width:240px;">
+        <div class="a-card-title-lg" style="margin-bottom:0.4rem;">🕰 Эвент «Капсула времени»</div>
+        <div class="a-help" style="margin:0;">
+          Включает страницу <code>/event</code> с обратным отсчётом до релиза и сеткой секретов.
+          Управление секретами — на странице
+          <a href="{{ url_for('admin_event') }}" style="color:var(--accent);">📜 Эвент</a>.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="event_active" {% if s.event_active %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+
+    <div class="a-field-row">
+      <div class="a-field" style="margin:0;">
+        <label class="a-label">Дата релиза (отсчёт идёт до этой даты)</label>
+        <input class="a-input" type="datetime-local" name="event_release_at" value="{{ s.event_release_at }}" />
+      </div>
+      <div class="a-field" style="margin:0;">
+        <label class="a-label">Название релиза</label>
+        <input class="a-input" type="text" name="event_release_title" value="{{ s.event_release_title }}" />
+      </div>
+    </div>
+
+    <div class="a-field" style="margin-top:1rem;">
+      <label class="a-label">Заголовок эвента (в навбаре и на странице)</label>
+      <input class="a-input" type="text" name="event_title" value="{{ s.event_title }}" />
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Описание эвента</label>
+      <textarea class="a-textarea" name="event_text" rows="4">{{ s.event_text }}</textarea>
+    </div>
+  </div>
+
+  <div style="margin-top:1.6rem;">
+    <button type="submit" class="a-btn a-btn-primary">💾 Сохранить настройки</button>
+  </div>
+</form>
+
+{% if s.event_active %}
+<div class="a-card" style="max-width:860px;margin-top:1.5rem;">
+  <div class="a-card-head">
+    <div class="a-card-title-lg">📊 Статистика эвента</div>
+  </div>
+
+  <div class="a-stat-grid" style="margin-bottom:0;">
+    <div class="a-stat">
+      <div class="a-stat-num">{{ ev_stats.users }}</div>
+      <div class="a-stat-label">Участников</div>
+    </div>
+    <div class="a-stat alt-2">
+      <div class="a-stat-num">{{ ev_stats.with_beta }}</div>
+      <div class="a-stat-label">Получили бета-код</div>
+    </div>
+    <div class="a-stat alt-3">
+      <div class="a-stat-num">{{ ev_stats.secrets_total }}</div>
+      <div class="a-stat-label">Секретов в капсуле</div>
+    </div>
+    <div class="a-stat alt-1">
+      <div class="a-stat-num">{{ ev_stats.unlocks_total }}</div>
+      <div class="a-stat-label">Разгаданных всего</div>
+    </div>
+  </div>
+
+  {% if beta_users %}
+  <div style="margin-top:1.4rem;">
+    <div class="a-card-title" style="margin-bottom:0.7rem;">Последние бета-коды</div>
+    <div class="a-table-wrap">
+      <table class="a-table">
+        <thead><tr><th>Код</th><th>Когда выдан</th></tr></thead>
+        <tbody>
+          {% for u in beta_users %}
+          <tr>
+            <td style="font-family:var(--font-mono);color:var(--accent);">{{ u.beta_code }}</td>
+            <td style="color:var(--text-3);">{{ u.beta_granted_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% endblock %}

@@ -1,66 +1,63 @@
-{% extends 'base.html' %}
+{% extends 'admin/base.html' %}
 {% block title %}{{ 'Редактировать' if article else 'Создать новость' }} — JARVIS Admin{% endblock %}
+{% block topbar %}{{ 'Редактировать новость' if article else 'Новая новость' }}{% endblock %}
 {% block content %}
 
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <div class="admin-sidebar-logo">JARVIS ADMIN</div>
-    <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item"><span class="admin-nav-icon">📊</span> Дашборд</a>
-    <a href="{{ url_for('admin_news') }}" class="admin-nav-item active"><span class="admin-nav-icon">📰</span> Новости</a>
-    <a href="{{ url_for('admin_forum') }}" class="admin-nav-item"><span class="admin-nav-icon">💬</span> Форум</a>
-    <a href="{{ url_for('admin_settings') }}" class="admin-nav-item"><span class="admin-nav-icon">⚙</span> Настройки</a>
-    <hr style="border-color:var(--border);margin:1rem 1.5rem"/>
-    <a href="{{ url_for('index') }}" class="admin-nav-item"><span class="admin-nav-icon">🌐</span> На сайт</a>
-    <a href="{{ url_for('admin_logout') }}" class="admin-nav-item" style="color:var(--accent-red)"><span class="admin-nav-icon">🚪</span> Выйти</a>
-  </aside>
+<div class="a-page-head">
+  <div>
+    <h2>{{ 'Редактировать новость' if article else 'Создать новость' }}</h2>
+    <div class="desc">{% if article %}#{{ article['id'] }} · создано {{ article['created_at'][:10] }}{% else %}Заполни поля и опубликуй на сайте{% endif %}</div>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('admin_news') }}" class="a-btn a-btn-ghost a-btn-sm">← К списку</a>
+  </div>
+</div>
 
-  <main class="admin-main">
-    <div class="admin-page-title">
-      {{ 'Редактировать новость' if article else 'Создать новость' }}
-      <a href="{{ url_for('admin_news') }}" class="btn btn-secondary btn-sm">← Назад</a>
+<div class="a-card" style="max-width:840px;">
+  <form method="POST" action="">
+    <div class="a-field">
+      <label class="a-label">Заголовок *</label>
+      <input class="a-input" type="text" name="title" required maxlength="200"
+             value="{{ article['title'] if article else '' }}"
+             placeholder="Например: JARVIS V2 2.2 — большое обновление" />
     </div>
 
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:2rem;max-width:800px">
-      <form method="POST" action="">
-        <div class="form-group">
-          <label class="form-label">Заголовок *</label>
-          <input type="text" name="title" class="form-control"
-                 value="{{ article['title'] if article else '' }}"
-                 placeholder="Заголовок новости" required maxlength="200"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Краткое описание (excerpt)</label>
-          <input type="text" name="excerpt" class="form-control"
-                 value="{{ article['excerpt'] if article else '' }}"
-                 placeholder="Краткое описание для списка новостей" maxlength="300"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">URL изображения</label>
-          <input type="url" name="image_url" class="form-control"
-                 value="{{ article['image_url'] if article else '' }}"
-                 placeholder="https://example.com/image.jpg"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Текст новости * (поддерживается HTML)</label>
-          <textarea name="content" class="form-control" rows="14"
-                    placeholder="&lt;p&gt;Текст новости...&lt;/p&gt;" required>{{ article['content'] if article else '' }}</textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-check">
-            <input type="checkbox" name="is_published"
-                   {{ 'checked' if (not article or article['is_published']) }}/>
-            <span class="form-check-label">Опубликовать сразу</span>
-          </label>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-          <button type="submit" class="btn btn-primary">
-            {{ '💾 Сохранить' if article else '🚀 Создать' }}
-          </button>
-          <a href="{{ url_for('admin_news') }}" class="btn btn-secondary">Отмена</a>
-        </div>
-      </form>
+    <div class="a-field">
+      <label class="a-label">Краткое описание (анонс)</label>
+      <input class="a-input" type="text" name="excerpt" maxlength="300"
+             value="{{ article['excerpt'] if article else '' }}"
+             placeholder="Появится в карточке на странице /news" />
     </div>
-  </main>
+
+    <div class="a-field">
+      <label class="a-label">URL картинки (16:9 рекомендуется)</label>
+      <input class="a-input" type="url" name="image_url"
+             value="{{ article['image_url'] if article else '' }}"
+             placeholder="https://example.com/image.jpg" />
+      <div class="a-help">Если оставить пустым — будет иконка-плейсхолдер.</div>
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Текст статьи * (поддерживается HTML)</label>
+      <textarea class="a-textarea" name="content" rows="14" required maxlength="50000"
+                placeholder="<p>Текст новости...</p>&#10;<h3>Подзаголовок</h3>">{{ article['content'] if article else '' }}</textarea>
+    </div>
+
+    <div class="a-field">
+      <label class="a-toggle">
+        <input type="checkbox" name="is_published" {{ 'checked' if (not article or article['is_published']) }}>
+        <span class="a-toggle-track"></span>
+        <span style="font-weight:500;">Опубликовать на сайте</span>
+      </label>
+    </div>
+
+    <div class="actions" style="margin-top:1.5rem;">
+      <button type="submit" class="a-btn a-btn-primary">
+        {{ '💾 Сохранить' if article else '🚀 Создать' }}
+      </button>
+      <a href="{{ url_for('admin_news') }}" class="a-btn a-btn-ghost">Отмена</a>
+    </div>
+  </form>
 </div>
 
 {% endblock %}

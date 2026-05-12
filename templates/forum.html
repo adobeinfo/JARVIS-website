@@ -1,22 +1,44 @@
-{% extends 'base.html' %} {% block title %}Форум — JARVIS{% endblock %} {% block
-content %}
+{% extends 'base.html' %} {% block title %}Форум — JARVIS{% endblock %} {% block content %}
 
 <div class="page-header">
     <div class="page-header-inner">
         <div class="page-header-label">Сообщество</div>
         <h1 class="page-header-title">Форум</h1>
+        <p style="color: var(--text-3); margin: 1rem auto 0; max-width: 560px; font-size: 1.02rem;">
+            Обсуждай JARVIS, делись сценариями, задавай вопросы — отвечает сообщество и команда проекта.
+        </p>
     </div>
 </div>
 
-<section class="section">
-    <div class="container">
+<section class="section" style="padding-top: 4rem;">
+    <div class="container" style="max-width: 920px;">
+
+        <!-- Stats -->
+        <div class="forum-stats animate-on-scroll">
+            <div class="forum-stat">
+                <div class="forum-stat-num">{{ categories|length }}</div>
+                <div class="forum-stat-label">категорий</div>
+            </div>
+            <div class="forum-stat">
+                <div class="forum-stat-num">{{ total_topics }}</div>
+                <div class="forum-stat-label">тем</div>
+            </div>
+            <div class="forum-stat">
+                <div class="forum-stat-num">{{ total_replies }}</div>
+                <div class="forum-stat-label">ответов</div>
+            </div>
+            <div class="forum-stat">
+                <div class="forum-stat-num">{{ total_views }}</div>
+                <div class="forum-stat-label">просмотров</div>
+            </div>
+        </div>
+
+        <!-- Categories -->
         <div class="forum-categories">
             {% for cat in categories %}
-            <a
-                href="{{ url_for('forum_category', cat_id=cat['id']) }}"
-                class="forum-cat-card animate-on-scroll"
-            >
-                <div class="forum-cat-icon">{{ cat['icon'] }}</div>
+            <a href="{{ url_for('forum_category', cat_id=cat['id']) }}"
+               class="forum-cat-card animate-on-scroll">
+                <div class="forum-cat-icon">{{ cat['icon'] or '💬' }}</div>
                 <div class="forum-cat-info">
                     <div class="forum-cat-name">{{ cat['name'] }}</div>
                     <div class="forum-cat-desc">{{ cat['description'] }}</div>
@@ -25,21 +47,13 @@ content %}
                     <div class="forum-cat-count">{{ cat['post_count'] }}</div>
                     <div class="forum-cat-count-label">тем</div>
                 </div>
+                <div class="forum-cat-arrow">›</div>
             </a>
             {% else %}
-            <div
-                class="text-center"
-                style="padding: 4rem 0; color: var(--text-muted)"
-            >
-                <div style="font-size: 3rem; margin-bottom: 1rem">💬</div>
-                <div
-                    style="
-                        font-family: &quot;Oswald&quot;, sans-serif;
-                        letter-spacing: 2px;
-                    "
-                >
-                    Категорий пока нет
-                </div>
+            <div class="empty-state animate-on-scroll">
+                <div class="empty-state-icon">💬</div>
+                <div class="empty-state-title">Категорий пока нет</div>
+                <div class="empty-state-desc">Скоро здесь появятся разделы для обсуждений.</div>
             </div>
             {% endfor %}
         </div>

@@ -157,17 +157,31 @@ def _hash_ip():
     return hashlib.md5(ip.encode()).hexdigest()[:12]
 
 
+def _site_settings_dict():
+    """Подгружает все site_settings одним запросом и накладывает дефолты."""
+    out = dict(DEFAULT_SETTINGS)
+    try:
+        rows = get_conn().execute("SELECT key, value FROM site_settings").fetchall()
+        for r in rows:
+            out[r["key"]] = r["value"]
+    except Exception:
+        pass
+    return out
+
+
 @app.context_processor
 def inject_globals():
-    """Делает summer_design / event_active доступными во всех шаблонах."""
-    try:
-        return {
-            "summer_design": get_setting("summer_design", "0") == "1",
-            "event_active":  get_setting("event_active",  "0") == "1",
-            "event_title":   get_setting("event_title",   DEFAULT_SETTINGS["event_title"]),
-        }
-    except Exception:
-        return {"summer_design": False, "event_active": False, "event_title": ""}
+    """Делает все настройки сайта доступными в шаблонах через `site` + старые поля."""
+    s = _site_settings_dict()
+    s["summer_design_bool"] = (s.get("summer_design", "0") == "1")
+    s["event_active_bool"]  = (s.get("event_active",  "0") == "1")
+    s["ann_enabled_bool"]   = (s.get("ann_enabled",   "0") == "1")
+    return {
+        "site":           s,
+        "summer_design":  s["summer_design_bool"],
+        "event_active":   s["event_active_bool"],
+        "event_title":    s.get("event_title", ""),
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -465,7 +479,13 @@ def forum():
         categories.append({"id": c["id"], "name": c["name"],
                             "description": c["description"], "icon": c["icon"],
                             "post_count": post_count})
-    return render_template("forum.html", categories=categories)
+    total_topics  = db.execute("SELECT COUNT(*) FROM forum_posts").fetchone()[0]
+    total_replies = db.execute("SELECT COUNT(*) FROM forum_replies").fetchone()[0]
+    total_views   = db.execute("SELECT COALESCE(SUM(views),0) FROM forum_posts").fetchone()[0]
+    return render_template("forum.html", categories=categories,
+                           total_topics=total_topics,
+                           total_replies=total_replies,
+                           total_views=total_views)
 
 
 @app.route("/forum/<int:cat_id>")
@@ -931,6 +951,85 @@ def admin_forum_reply_delete(rid):
             return redirect(url_for("forum_post",
                                     cat_id=post["category_id"], post_id=post["id"]))
     return redirect(url_for("admin_forum"))
+
+
+# ── Admin: редактирование категории форума ────────────────────────────────────
+@app.route("/admin/forum/category/<int:cid>/edit", methods=["POST"])
+@admin_required
+def admin_forum_cat_edit(cid):
+    db = get_conn()
+    name = request.form.get("name", "").strip()
+    desc = request.form.get("description", "").strip()
+    icon = request.form.get("icon", "💬").strip() or "💬"
+    if not name:
+        flash("Название не может быть пустым.", "error")
+        return redirect(url_for("admin_forum"))
+    db.execute(
+        "UPDATE forum_categories SET name=?, description=?, icon=? WHERE id=?",
+        (name, desc, icon, cid),
+    )
+    db.commit()
+    flash("Категория обновлена.", "success")
+    return redirect(url_for("admin_forum"))
+
+
+# ── Admin: pin / lock тем ─────────────────────────────────────────────────────
+@app.route("/admin/forum/post/<int:pid>/pin", methods=["POST"])
+@admin_required
+def admin_forum_post_pin(pid):
+    db = get_conn()
+    db.execute("UPDATE forum_posts SET is_pinned = NOT IFNULL(is_pinned,0) WHERE id=?", (pid,))
+    db.commit()
+    flash("Статус закрепа изменён.", "success")
+    return redirect(request.referrer or url_for("admin_forum"))
+
+
+@app.route("/admin/forum/post/<int:pid>/lock", methods=["POST"])
+@admin_required
+def admin_forum_post_lock(pid):
+    db = get_conn()
+    db.execute("UPDATE forum_posts SET is_locked = NOT IFNULL(is_locked,0) WHERE id=?", (pid,))
+    db.commit()
+    flash("Статус блокировки изменён.", "success")
+    return redirect(request.referrer or url_for("admin_forum"))
+
+
+# ── Admin: редактируемый контент сайта ────────────────────────────────────────
+SITE_CONTENT_KEYS = [
+    # announcement
+    "ann_enabled", "ann_text", "ann_link", "ann_style",
+    # hero
+    "hero_eyebrow", "hero_title_lead", "hero_title_accent",
+    "hero_cta_primary", "hero_cta_secondary",
+    "hero_meta_1_num", "hero_meta_1_label",
+    "hero_meta_2_num", "hero_meta_2_label",
+    "hero_meta_3_num", "hero_meta_3_label",
+    "hero_meta_4_num", "hero_meta_4_label",
+    # cta
+    "cta_label", "cta_title", "cta_text",
+    # download
+    "download_version", "download_subtitle",
+    # social
+    "social_telegram", "social_boosty",
+]
+
+
+@app.route("/admin/site", methods=["GET", "POST"])
+@admin_required
+def admin_site_content():
+    if request.method == "POST":
+        # Чекбокс ann_enabled — особый случай
+        set_setting("ann_enabled", "1" if request.form.get("ann_enabled") else "0")
+        for key in SITE_CONTENT_KEYS:
+            if key == "ann_enabled":
+                continue
+            val = request.form.get(key, "")
+            # Не затираем дефолтом, если пусто — кладём пустую строку
+            set_setting(key, val.strip())
+        flash("Контент сайта обновлён.", "success")
+        return redirect(url_for("admin_site_content"))
+
+    return render_template("admin/site_content.html", s=_site_settings_dict())
 
 
 # ─── 404 ───────────────────────────────────────────────────────────────────────

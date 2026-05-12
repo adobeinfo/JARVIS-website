@@ -1,494 +1,187 @@
-{% extends 'base.html' %} {% block title %}Дашборд — JARVIS Admin{% endblock %}
+{% extends 'admin/base.html' %}
+{% block title %}Дашборд — JARVIS Admin{% endblock %}
+{% block topbar %}Дашборд{% endblock %}
 {% block content %}
 
-<div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-        <div class="admin-sidebar-logo">JARVIS ADMIN</div>
-        <a
-            href="{{ url_for('admin_dashboard') }}"
-            class="admin-nav-item active"
-        >
-            <span class="admin-nav-icon">📊</span> Дашборд
-        </a>
-        <a href="{{ url_for('admin_news') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">📰</span> Новости
-        </a>
-        <a href="{{ url_for('admin_forum') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">💬</span> Форум
-        </a>
-        <a href="{{ url_for('admin_settings') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">⚙</span> Настройки
-        </a>
-        <hr style="border-color: var(--border); margin: 1rem 1.5rem" />
-        <a href="{{ url_for('index') }}" class="admin-nav-item">
-            <span class="admin-nav-icon">🌐</span> На сайт
-        </a>
-        <a
-            href="{{ url_for('admin_logout') }}"
-            class="admin-nav-item"
-            style="color: var(--red)"
-        >
-            <span class="admin-nav-icon">🚪</span> Выйти
-        </a>
-    </aside>
-
-    <!-- Main -->
-    <main class="admin-main">
-        <!-- Заголовок -->
-        <div class="admin-page-title">
-            Дашборд
-            <span
-                style="
-                    font-size: 0.9rem;
-                    color: var(--text3);
-                    font-family: &quot;Inter&quot;, sans-serif;
-                    font-weight: 400;
-                "
-            >
-                Добро пожаловать, {{ session.get('admin_username','admin') }}
-            </span>
-        </div>
-
-        <!-- ═══ БЛОК ПОСЕЩЕНИЙ ═══════════════════════════════════ -->
-        <div style="margin-bottom: 0.6rem">
-            <div
-                style="
-                    font-family: &quot;Oswald&quot;, sans-serif;
-                    font-size: 0.68rem;
-                    letter-spacing: 4px;
-                    text-transform: uppercase;
-                    color: var(--text3);
-                    margin-bottom: 0.8rem;
-                "
-            >
-                📈 Посещения сайта
-            </div>
-        </div>
-
-        <div
-            class="stats-grid"
-            style="
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                margin-bottom: 1.5rem;
-            "
-        >
-            <div class="stat-card" style="border-top: 2px solid var(--cyan)">
-                <div class="stat-icon">🌍</div>
-                <div class="stat-value" style="font-size: 2.2rem">
-                    {{ stats.visits_total }}
-                </div>
-                <div class="stat-label">Всего визитов</div>
-            </div>
-            <div class="stat-card" style="border-top: 2px solid #22c55e">
-                <div class="stat-icon">📅</div>
-                <div
-                    class="stat-value"
-                    style="font-size: 2.2rem; color: #22c55e"
-                >
-                    {{ stats.visits_today }}
-                </div>
-                <div class="stat-label">Сегодня</div>
-            </div>
-            <div class="stat-card" style="border-top: 2px solid #a78bfa">
-                <div class="stat-icon">📆</div>
-                <div
-                    class="stat-value"
-                    style="font-size: 2.2rem; color: #a78bfa"
-                >
-                    {{ stats.visits_week }}
-                </div>
-                <div class="stat-label">За 7 дней</div>
-            </div>
-            <div class="stat-card" style="border-top: 2px solid #fb923c">
-                <div class="stat-icon">👤</div>
-                <div
-                    class="stat-value"
-                    style="font-size: 2.2rem; color: #fb923c"
-                >
-                    {{ stats.unique_today }}
-                </div>
-                <div class="stat-label">Уникальных сегодня</div>
-            </div>
-        </div>
-
-        <!-- ═══ БЛОК СКАЧИВАНИЙ ══════════════════════════════════ -->
-        <div style="margin-bottom: 0.6rem">
-            <div
-                style="
-                    font-family: &quot;Oswald&quot;, sans-serif;
-                    font-size: 0.68rem;
-                    letter-spacing: 4px;
-                    text-transform: uppercase;
-                    color: var(--text3);
-                    margin-bottom: 0.8rem;
-                "
-            >
-                ⬇ Скачивания установщика
-            </div>
-        </div>
-
-        <div
-            class="stats-grid"
-            style="
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                margin-bottom: 2rem;
-            "
-        >
-            <div class="stat-card" style="border-top: 2px solid #22c55e">
-                <div class="stat-icon">📦</div>
-                <div
-                    class="stat-value"
-                    style="font-size: 2.2rem; color: #22c55e"
-                >
-                    {{ stats.dl_total }}
-                </div>
-                <div class="stat-label">Всего скачиваний</div>
-            </div>
-            <div class="stat-card" style="border-top: 2px solid var(--cyan)">
-                <div class="stat-icon">🔽</div>
-                <div class="stat-value" style="font-size: 2.2rem">
-                    {{ stats.dl_today }}
-                </div>
-                <div class="stat-label">Сегодня</div>
-            </div>
-            <div class="stat-card" style="border-top: 2px solid #a78bfa">
-                <div class="stat-icon">📊</div>
-                <div
-                    class="stat-value"
-                    style="font-size: 2.2rem; color: #a78bfa"
-                >
-                    {{ stats.dl_week }}
-                </div>
-                <div class="stat-label">За 7 дней</div>
-            </div>
-        </div>
-
-        <!-- ═══ ГРАФИК ПОСЕЩЕНИЙ (7 дней) ═══════════════════════ -->
-        {% if visits_chart %}
-        <div
-            style="
-                background: var(--bg3);
-                border: 1px solid var(--border);
-                border-radius: var(--r);
-                padding: 1.5rem;
-                margin-bottom: 2rem;
-            "
-        >
-            <div
-                style="
-                    font-family: &quot;Oswald&quot;, sans-serif;
-                    font-size: 0.72rem;
-                    letter-spacing: 3px;
-                    text-transform: uppercase;
-                    color: var(--text3);
-                    margin-bottom: 1.2rem;
-                "
-            >
-                📈 Посещаемость за последние 7 дней
-            </div>
-            {% set max_val = visits_chart | map(attribute='cnt') | max %}
-            <div
-                style="
-                    display: flex;
-                    align-items: flex-end;
-                    gap: 8px;
-                    height: 80px;
-                "
-            >
-                {% for row in visits_chart %} {% set pct = (row['cnt'] / max_val
-                * 100) | int if max_val > 0 else 0 %}
-                <div
-                    style="
-                        flex: 1;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 4px;
-                    "
-                >
-                    <div
-                        style="
-                            font-size: 0.65rem;
-                            color: var(--text3);
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                        "
-                    >
-                        {{ row['cnt'] }}
-                    </div>
-                    <div
-                        style="width:100%;border-radius:3px 3px 0 0;
-                      background:linear-gradient(180deg,var(--cyan),rgba(0,212,255,.3));
-                      height:{{ [pct,4] | max }}px;min-height:4px;transition:height .3s"
-                    ></div>
-                    <div
-                        style="
-                            font-size: 0.6rem;
-                            color: var(--text3);
-                            white-space: nowrap;
-                        "
-                    >
-                        {{ row['day'][5:] }}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- ═══ ДВЕ КОЛОНКИ: ТОП СТРАНИЦ + ФОРУМ ══════════════ -->
-        <div
-            style="
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            "
-        >
-            <!-- Топ страниц -->
-            <div
-                style="
-                    background: var(--bg3);
-                    border: 1px solid var(--border);
-                    border-radius: var(--r);
-                    overflow: hidden;
-                "
-            >
-                <div
-                    style="
-                        padding: 1rem 1.2rem;
-                        border-bottom: 1px solid var(--border);
-                        font-family: &quot;Oswald&quot;, sans-serif;
-                        font-size: 0.72rem;
-                        letter-spacing: 3px;
-                        text-transform: uppercase;
-                        color: var(--text3);
-                    "
-                >
-                    🔥 Популярные страницы
-                </div>
-                <div>
-                    {% if top_pages %} {% set max_p = top_pages[0]['cnt'] %} {%
-                    for page in top_pages %}
-                    <div
-                        style="
-                            padding: 0.65rem 1.2rem;
-                            border-bottom: 1px solid var(--border);
-                            display: flex;
-                            align-items: center;
-                            gap: 0.8rem;
-                        "
-                    >
-                        <div style="flex: 1; min-width: 0">
-                            <div
-                                style="
-                                    font-size: 0.8rem;
-                                    color: #fff;
-                                    white-space: nowrap;
-                                    overflow: hidden;
-                                    text-overflow: ellipsis;
-                                "
-                            >
-                                {{ page['path'] }}
-                            </div>
-                            <div
-                                style="
-                                    height: 3px;
-                                    background: var(--border2);
-                                    border-radius: 2px;
-                                    margin-top: 0.4rem;
-                                "
-                            >
-                                <div
-                                    style="height:100%;border-radius:2px;
-                              background:linear-gradient(90deg,var(--cyan),#7c3aed);
-                              width:{{ (page['cnt'] / max_p * 100) | int }}%"
-                                ></div>
-                            </div>
-                        </div>
-                        <div
-                            style="
-                                font-family: &quot;Bebas Neue&quot;, sans-serif;
-                                font-size: 1.1rem;
-                                color: var(--cyan);
-                                flex-shrink: 0;
-                            "
-                        >
-                            {{ page['cnt'] }}
-                        </div>
-                    </div>
-                    {% endfor %} {% else %}
-                    <div
-                        style="
-                            padding: 2rem;
-                            text-align: center;
-                            color: var(--text3);
-                            font-size: 0.85rem;
-                        "
-                    >
-                        Нет данных
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Контент -->
-            <div style="display: flex; flex-direction: column; gap: 1rem">
-                <!-- Быстрые действия -->
-                <div
-                    style="
-                        background: var(--bg3);
-                        border: 1px solid var(--border);
-                        border-radius: var(--r);
-                        padding: 1.2rem;
-                    "
-                >
-                    <div
-                        style="
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                            font-size: 0.72rem;
-                            letter-spacing: 3px;
-                            text-transform: uppercase;
-                            color: var(--text3);
-                            margin-bottom: 1rem;
-                        "
-                    >
-                        ⚡ Быстрые действия
-                    </div>
-                    <div
-                        style="
-                            display: flex;
-                            flex-direction: column;
-                            gap: 0.5rem;
-                        "
-                    >
-                        <a
-                            href="{{ url_for('admin_news_create') }}"
-                            class="btn btn-primary btn-sm"
-                            style="justify-content: center"
-                            >+ Написать новость</a
-                        >
-                        <a
-                            href="{{ url_for('admin_news') }}"
-                            class="btn btn-secondary btn-sm"
-                            style="justify-content: center"
-                            >📰 Все новости ({{ stats.news_count }})</a
-                        >
-                        <a
-                            href="{{ url_for('admin_forum') }}"
-                            class="btn btn-secondary btn-sm"
-                            style="justify-content: center"
-                            >💬 Форум ({{ stats.posts_count }} тем)</a
-                        >
-                    </div>
-                </div>
-
-                <!-- Контентная статистика -->
-                <div
-                    style="
-                        background: var(--bg3);
-                        border: 1px solid var(--border);
-                        border-radius: var(--r);
-                        padding: 1.2rem;
-                    "
-                >
-                    <div
-                        style="
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                            font-size: 0.72rem;
-                            letter-spacing: 3px;
-                            text-transform: uppercase;
-                            color: var(--text3);
-                            margin-bottom: 1rem;
-                        "
-                    >
-                        📋 Контент
-                    </div>
-                    <div
-                        style="
-                            display: flex;
-                            flex-direction: column;
-                            gap: 0.6rem;
-                        "
-                    >
-                        {% for label, val, color in [ ('Новости',
-                        stats.news_count, '#22c55e'), ('Тем на форуме',
-                        stats.posts_count, var(--cyan) if false else '#00d4ff'),
-                        ('Ответов', stats.replies_count, '#a78bfa'),
-                        ('Просмотров форума', stats.total_views, '#fb923c') ] %}
-                        <div
-                            style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                padding: 0.4rem 0;
-                                border-bottom: 1px solid var(--border);
-                            "
-                        >
-                            <span
-                                style="font-size: 0.85rem; color: var(--text2)"
-                                >{{ label }}</span
-                            >
-                            <span
-                                style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:{{ color }}"
-                            >
-                                {{ val }}
-                            </span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══ ПОСЛЕДНИЕ ТЕМЫ ФОРУМА ════════════════════════════ -->
-        {% if recent_posts %}
-        <div
-            style="
-                font-family: &quot;Oswald&quot;, sans-serif;
-                font-size: 0.68rem;
-                letter-spacing: 4px;
-                text-transform: uppercase;
-                color: var(--text3);
-                margin-bottom: 0.8rem;
-            "
-        >
-            💬 Последние темы форума
-        </div>
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Заголовок</th>
-                        <th>Категория</th>
-                        <th>Автор</th>
-                        <th>Дата</th>
-                        <th>👁</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for post in recent_posts %}
-                    <tr>
-                        <td style="color: var(--text3)">{{ post['id'] }}</td>
-                        <td>
-                            <a
-                                href="{{ url_for('forum_post', cat_id=post['category_id'], post_id=post['id']) }}"
-                                style="color: var(--cyan)"
-                                >{{ post['title'][:55] }}</a
-                            >
-                        </td>
-                        <td>{{ post['cat_name'] }}</td>
-                        <td>{{ post['author_name'] }}</td>
-                        <td>{{ post['created_at'][:10] }}</td>
-                        <td style="color: var(--cyan)">{{ post['views'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-    </main>
+<div class="a-page-head">
+  <div>
+    <h2>Привет, {{ session.get('admin_username', 'admin') }} 👋</h2>
+    <div class="desc">Сводка по сайту, форуму и скачиваниям JARVIS V2 2.2</div>
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary a-btn-sm">+ Новость</a>
+    <a href="{{ url_for('admin_site_content') }}" class="a-btn a-btn-secondary a-btn-sm">🎨 Контент сайта</a>
+  </div>
 </div>
+
+{# ───── VISITS STATS ───── #}
+<div class="a-card-title" style="margin-bottom:0.7rem;">📈 Посещения</div>
+<div class="a-stat-grid">
+  <div class="a-stat">
+    <div class="a-stat-icon">🌍</div>
+    <div class="a-stat-num">{{ stats.visits_total }}</div>
+    <div class="a-stat-label">Всего визитов</div>
+  </div>
+  <div class="a-stat alt-2">
+    <div class="a-stat-icon">📅</div>
+    <div class="a-stat-num">{{ stats.visits_today }}</div>
+    <div class="a-stat-label">Сегодня</div>
+  </div>
+  <div class="a-stat alt-1">
+    <div class="a-stat-icon">📆</div>
+    <div class="a-stat-num">{{ stats.visits_week }}</div>
+    <div class="a-stat-label">За 7 дней</div>
+  </div>
+  <div class="a-stat alt-3">
+    <div class="a-stat-icon">👤</div>
+    <div class="a-stat-num">{{ stats.unique_today }}</div>
+    <div class="a-stat-label">Уникальных сегодня</div>
+  </div>
+</div>
+
+{# ───── DOWNLOADS STATS ───── #}
+<div class="a-card-title" style="margin-bottom:0.7rem;">⬇ Скачивания установщика</div>
+<div class="a-stat-grid">
+  <div class="a-stat alt-2">
+    <div class="a-stat-icon">📦</div>
+    <div class="a-stat-num">{{ stats.dl_total }}</div>
+    <div class="a-stat-label">Всего скачиваний</div>
+  </div>
+  <div class="a-stat">
+    <div class="a-stat-icon">🔽</div>
+    <div class="a-stat-num">{{ stats.dl_today }}</div>
+    <div class="a-stat-label">Сегодня</div>
+  </div>
+  <div class="a-stat alt-1">
+    <div class="a-stat-icon">📊</div>
+    <div class="a-stat-num">{{ stats.dl_week }}</div>
+    <div class="a-stat-label">За 7 дней</div>
+  </div>
+</div>
+
+{# ───── CHART (7 days) ───── #}
+{% if visits_chart %}
+<div class="a-card" style="margin-bottom:1.6rem;">
+  <div class="a-card-head">
+    <div class="a-card-title-lg">Посещаемость · последние 7 дней</div>
+    <span class="a-badge accent">live</span>
+  </div>
+  {% set max_val = visits_chart | map(attribute='cnt') | max %}
+  <div style="display:flex;align-items:flex-end;gap:10px;height:120px;">
+    {% for row in visits_chart %}
+      {% set pct = (row['cnt'] / max_val * 100) | int if max_val > 0 else 0 %}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="font-size:0.7rem;color:var(--text-3);font-weight:600;">{{ row['cnt'] }}</div>
+        <div style="width:100%;border-radius:6px 6px 0 0;
+                    background:linear-gradient(180deg, var(--accent), rgba(106,163,255,0.2));
+                    height:{{ [pct,4] | max }}%; min-height:4px;
+                    box-shadow:0 0 14px rgba(106,163,255,0.3);
+                    transition:height .3s;"></div>
+        <div style="font-size:0.68rem;color:var(--text-3);">{{ row['day'][5:] }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ───── TWO COLUMNS: TOP PAGES + CONTENT STATS ───── #}
+<div class="a-grid a-grid-2" style="margin-bottom:1.6rem;">
+
+  <div class="a-card">
+    <div class="a-card-head">
+      <div class="a-card-title-lg">🔥 Популярные страницы</div>
+    </div>
+    {% if top_pages %}
+      {% set max_p = top_pages[0]['cnt'] %}
+      <div style="display:flex;flex-direction:column;gap:0.85rem;">
+        {% for page in top_pages %}
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.35rem;">
+            <span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">
+              {{ page['path'] }}
+            </span>
+            <span style="font-weight:600;color:var(--accent);">{{ page['cnt'] }}</span>
+          </div>
+          <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:{{ (page['cnt'] / max_p * 100) | int }}%;
+                        background:linear-gradient(90deg, var(--accent), var(--accent-2));
+                        border-radius:3px;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center;padding:2rem;color:var(--text-3);font-size:0.88rem;">Нет данных</div>
+    {% endif %}
+  </div>
+
+  <div class="a-card">
+    <div class="a-card-head">
+      <div class="a-card-title-lg">📋 Контент</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0;">
+      {% for label, val, hint in [
+          ('Новости', stats.news_count, '📰'),
+          ('Тем на форуме', stats.posts_count, '💬'),
+          ('Ответов', stats.replies_count, '↩'),
+          ('Просмотров форума', stats.total_views, '👁')
+      ] %}
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:0.7rem 0;border-bottom:1px solid var(--line);">
+        <span style="color:var(--text-2);font-size:0.92rem;">{{ hint }} {{ label }}</span>
+        <span style="font-weight:700;font-size:1.15rem;letter-spacing:-0.02em;">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:1.2rem;">
+      <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary a-btn-sm">+ Написать новость</a>
+      <a href="{{ url_for('admin_news') }}" class="a-btn a-btn-secondary a-btn-sm">📰 Все новости</a>
+      <a href="{{ url_for('admin_forum') }}" class="a-btn a-btn-secondary a-btn-sm">💬 Форум</a>
+    </div>
+  </div>
+</div>
+
+{# ───── RECENT POSTS ───── #}
+{% if recent_posts %}
+<div class="a-card-title" style="margin-bottom:0.7rem;">💬 Последние темы форума</div>
+<div class="a-table-wrap">
+  <table class="a-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Заголовок</th>
+        <th>Категория</th>
+        <th>Автор</th>
+        <th>Дата</th>
+        <th>👁</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for post in recent_posts %}
+      <tr>
+        <td style="color:var(--text-3);">{{ post['id'] }}</td>
+        <td>
+          <a href="{{ url_for('forum_post', cat_id=post['category_id'], post_id=post['id']) }}"
+             style="color:var(--text);font-weight:500;" target="_blank">
+            {{ post['title'][:60] }}{% if post['title']|length > 60 %}…{% endif %}
+          </a>
+        </td>
+        <td><span class="a-badge muted">{{ post['cat_name'] }}</span></td>
+        <td>{{ post['author_name'] }}</td>
+        <td style="color:var(--text-3);">{{ post['created_at'][:10] }}</td>
+        <td style="color:var(--accent);font-weight:600;">{{ post['views'] }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin_forum_post_delete', pid=post['id']) }}"
+                onsubmit="return confirm('Удалить тему?')">
+            <button class="a-btn a-btn-danger a-btn-xs" type="submit">✕</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 
 {% endblock %}

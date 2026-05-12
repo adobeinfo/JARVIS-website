@@ -19,7 +19,13 @@
         {% endif %}
         {% block head %}{% endblock %}
     </head>
-    <body class="{% if summer_design %}summer{% endif %}">
+    <body class="{% if summer_design %}summer{% endif %} {% if site.ann_enabled_bool %}has-ann{% endif %}">
+
+        {% if site.ann_enabled_bool and site.ann_text %}
+        <a href="{{ site.ann_link or '#' }}" class="ann-bar style-{{ site.ann_style or 'accent' }}">
+            {{ site.ann_text }}
+        </a>
+        {% endif %}
 
         {% if summer_design %}
         <div class="summer-banner">
@@ -127,14 +133,14 @@
                     <ul class="footer-links">
                         <li>
                             <a
-                                href="https://t.me/Jarvis_free"
+                                href="{{ site.social_telegram or 'https://t.me/Jarvis_assistant_free' }}"
                                 target="_blank"
                                 >Telegram канал</a
                             >
                         </li>
                         <li>
                             <a
-                                href="https://boosty.to/photoshop24/donate"
+                                href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
                                 target="_blank"
                                 >♥ Поддержать на Boosty</a
                             >
@@ -152,11 +158,11 @@
             <div class="footer-bottom">
                 <span>© 2024–2026 JARVIS Team. Все права защищены.</span>
                 <div style="display: flex; gap: 1.5rem; align-items: center">
-                    <a href="https://t.me/Jarvis_free" target="_blank"
+                    <a href="{{ site.social_telegram or 'https://t.me/Jarvis_assistant_free' }}" target="_blank"
                         >Telegram</a
                     >
                     <a
-                        href="https://boosty.to/photoshop24/donate"
+                        href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
                         target="_blank"
                         style="color: var(--gold)"
                         >♥ Boosty</a

@@ -1,128 +1,74 @@
-{% extends 'base.html' %} {% block title %}JARVIS AI — Персональный голосовой
-ассистент{% endblock %} {% block content %}
+{% extends 'base.html' %} {% block title %}JARVIS V2 2.2 — AI-ассистент для Windows{% endblock %} {% block content %}
 
-<!-- ─── HERO ──────────────────────────────────────────── -->
+<!-- ═══ HERO ════════════════════════════════════════════════ -->
 <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-grid"></div>
-    <div class="hero-scan"></div>
     <div class="hero-content">
-        <div class="hero-eyebrow">AI Assistant · Windows · v22.0</div>
+        <div class="hero-eyebrow">
+            <span>{{ site.hero_eyebrow }}</span>
+        </div>
 
-        <h1 class="hero-title">JARV<span class="accent">ISV2</span></h1>
+        <h1 class="hero-title">
+            {{ site.hero_title_lead }} <span class="accent">{{ site.hero_title_accent }}</span>
+        </h1>
 
         <p class="hero-subtitle">
             <span id="typewriter"></span><span class="tw-cursor">|</span>
         </p>
 
-        <!-- Онлайн счётчик -->
-        <div
-            id="onlineBar"
-            style="
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-family: &quot;Oswald&quot;, sans-serif;
-                font-size: 0.7rem;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                color: var(--text3);
-                margin-bottom: 1.5rem;
-                opacity: 0;
-                transition: opacity 0.5s;
-            "
-        >
-            <span
-                style="
-                    width: 7px;
-                    height: 7px;
-                    border-radius: 50%;
-                    background: #22c55e;
-                    box-shadow: 0 0 6px #22c55e;
-                    flex-shrink: 0;
-                    animation: pulse-dot 2s ease-in-out infinite;
-                "
-            ></span>
-            <span id="onlineCount">1</span> человек онлайн
-        </div>
-
         <div class="hero-actions">
             <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">
-                ⬇ Скачать v2.1
+                {{ site.hero_cta_primary }}
             </a>
-            <a href="{{ url_for('forum') }}" class="btn btn-secondary btn-lg">
-                💬 Сообщество
+            <a href="#features" class="btn btn-secondary btn-lg">
+                {{ site.hero_cta_secondary }}
             </a>
+        </div>
+
+        <div class="hero-orb-stage" aria-hidden="true">
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="ring"></div>
+            <div class="core"></div>
         </div>
 
         <div class="hero-meta">
+            {% for i in [1,2,3,4] %}
             <div class="hero-meta-item">
-                <div class="hero-meta-num">2</div>
-                <div class="hero-meta-label">Версия</div>
+                <div class="hero-meta-num">{{ site['hero_meta_'+i|string+'_num'] }}</div>
+                <div class="hero-meta-label">{{ site['hero_meta_'+i|string+'_label'] }}</div>
             </div>
-            <div class="hero-meta-item">
-                <div class="hero-meta-num">1</div>
-                <div class="hero-meta-label">TTS движков</div>
-            </div>
-            <div class="hero-meta-item">
-                <div class="hero-meta-num">1</div>
-                <div class="hero-meta-label">AI провайдера</div>
-            </div>
-            <div class="hero-meta-item">
-                <div class="hero-meta-num">100%</div>
-                <div class="hero-meta-label">Бесплатно</div>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </section>
 
-<!-- ─── ТЕХНОЛОГИИ (реальные логотипы) ───────────────── -->
+<!-- ═══ MARQUEE ═════════════════════════════════════════════ -->
 <div class="marquee-section">
-    <div class="marquee-label-bar">Технологии которые мы используем</div>
+    <div class="marquee-label-bar">Технологии под капотом</div>
     <div class="marquee-wrapper">
         <div class="marquee-track">
-            {% set companies = [ ('https://cdn.simpleicons.org/python/ffffff',
-            'Python', 'img'), ('https://cdn.simpleicons.org/openai/ffffff',
-            'OpenAI', 'img'),
-            ('https://cdn.simpleicons.org/microsoftedge/ffffff', 'Edge TTS',
-            'img'), ('GROQ', 'Groq', 'txt'), ('SBER', 'GigaChat', 'txt'),
-            ('https://cdn.simpleicons.org/pytorch/ffffff', 'PyTorch', 'img'),
-            ('XTTS', 'Coqui XTTS', 'txt'),
-            ('https://cdn.simpleicons.org/numpy/ffffff', 'NumPy', 'img'),
-            ('VOSK', 'Vosk', 'txt'),
-            ('https://cdn.simpleicons.org/sqlite/ffffff', 'SQLite', 'img'),
-            ('11EL', 'ElevenLabs', 'txt'),
-            ('https://cdn.simpleicons.org/windows/ffffff', 'Windows', 'img'),
-            ('FISH', 'Fish Audio', 'txt'),
-            ('https://cdn.simpleicons.org/flask/ffffff', 'Flask', 'img'),
-            ('MISTRAL', 'Mistral AI', 'txt'),
-            ('https://cdn.simpleicons.org/discord/ffffff', 'Discord RPC',
-            'img'), ] %} {# Первая копия #} {% for logo, name, t in companies %}
+            {% set companies = [
+                ('https://cdn.simpleicons.org/python/ffffff', 'Python', 'img'),
+                ('https://cdn.simpleicons.org/openai/ffffff', 'OpenAI', 'img'),
+                ('https://cdn.simpleicons.org/microsoftedge/ffffff', 'Edge TTS', 'img'),
+                ('GROQ', 'Groq', 'txt'),
+                ('SBER', 'GigaChat', 'txt'),
+                ('https://cdn.simpleicons.org/pytorch/ffffff', 'PyTorch', 'img'),
+                ('XTTS', 'Coqui XTTS', 'txt'),
+                ('https://cdn.simpleicons.org/numpy/ffffff', 'NumPy', 'img'),
+                ('VOSK', 'Vosk', 'txt'),
+                ('https://cdn.simpleicons.org/sqlite/ffffff', 'SQLite', 'img'),
+                ('11EL', 'ElevenLabs', 'txt'),
+                ('https://cdn.simpleicons.org/windows/ffffff', 'Windows', 'img'),
+                ('FISH', 'Fish Audio', 'txt'),
+                ('https://cdn.simpleicons.org/flask/ffffff', 'Flask', 'img'),
+                ('MISTRAL', 'Mistral AI', 'txt'),
+                ('https://cdn.simpleicons.org/discord/ffffff', 'Discord RPC', 'img'),
+            ] %}
+            {% for logo, name, t in companies + companies %}
             <div class="marquee-item">
-                <div
-                    class="marquee-item-logo {% if t == 'txt' %}logo-text{% endif %}"
-                >
-                    {% if t == 'img' %}<img
-                        src="{{ logo }}"
-                        alt="{{ name }}"
-                        loading="lazy"
-                    />
-                    {% else %}{{ logo }}{% endif %}
-                </div>
-                <span class="marquee-item-name">{{ name }}</span>
-            </div>
-            {% endfor %} {# Вторая копия для бесконечного скролла #} {% for
-            logo, name, t in companies %}
-            <div class="marquee-item">
-                <div
-                    class="marquee-item-logo {% if t == 'txt' %}logo-text{% endif %}"
-                >
-                    {% if t == 'img' %}<img
-                        src="{{ logo }}"
-                        alt="{{ name }}"
-                        loading="lazy"
-                    />
-                    {% else %}{{ logo }}{% endif %}
+                <div class="marquee-item-logo {% if t == 'txt' %}logo-text{% endif %}">
+                    {% if t == 'img' %}<img src="{{ logo }}" alt="{{ name }}" loading="lazy" />{% else %}{{ logo }}{% endif %}
                 </div>
                 <span class="marquee-item-name">{{ name }}</span>
             </div>
@@ -131,518 +77,190 @@
     </div>
 </div>
 
-<!-- ─── ВОЗМОЖНОСТИ ───────────────────────────────────── -->
-<section class="section section-dark">
+<!-- ═══ FEATURES ════════════════════════════════════════════ -->
+<section class="section" id="features">
     <div class="container">
-        <div style="max-width: 580px">
-            <div class="section-label animate-on-scroll">Возможности</div>
-            <h2 class="section-title animate-on-scroll">
-                Что умеет<br />JARVIS
-            </h2>
-            <p class="section-sub animate-on-scroll">
-                Полноценный AI-ассистент для ежедневного управления компьютером
-                голосом и текстом
-            </p>
+        <div class="section-head animate-on-scroll">
+            <div class="section-label">Возможности</div>
+            <h2>Создан для каждого&nbsp;дня</h2>
+            <p>Полноценный AI-ассистент для управления компьютером голосом и текстом — без VPN и подписок.</p>
         </div>
 
-        <div class="features-grid">
-            <div class="feature-card animate-on-scroll animate-delay-1">
-                <div class="feature-card-num">01</div>
-                <div class="feature-icon"></div>
+        <div class="features">
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+                </div>
+                <div class="feature-title">Голосовое управление</div>
+                <p class="feature-desc">Скажи «Джарвис» — ассистент слушает. Wake-Word через Vosk, работает офлайн без задержек.</p>
+            </div>
+
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
                 <div class="feature-title">AI на русском</div>
-                <p class="feature-text">
-                    GigaChat от Сбера без VPN. Groq и Mistral AI в качестве
-                    резервных. Вшитый ключ — работает из коробки.
-                </p>
+                <p class="feature-desc">GigaChat от Сбера без VPN. Groq и Mistral AI как резервные. Вшитый ключ — работает из коробки.</p>
             </div>
-            <div class="feature-card animate-on-scroll animate-delay-2">
-                <div class="feature-card-num">02</div>
-                <div class="feature-icon"></div>
-                <div class="feature-title">Wake-Word</div>
-                <p class="feature-text">
-                    Скажи «Джарвис» — ассистент слушает. Распознавание через
-                    Vosk работает полностью офлайн.
-                </p>
+
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </div>
+                <div class="feature-title">6 TTS-движков</div>
+                <p class="feature-desc">Edge TTS, ElevenLabs, Coqui XTTS, Fish Audio, Yandex SpeechKit, Silero — выбирай голос на вкус.</p>
             </div>
-            <div class="feature-card animate-on-scroll animate-delay-3">
-                <div class="feature-card-num">03</div>
-                <div class="feature-icon"></div>
-                <div class="feature-title">6 TTS движков</div>
-                <p class="feature-text">
-                    Edge TTS, ElevenLabs, Coqui XTTS, Fish Audio, Yandex
-                    SpeechKit, Silero — выбери голос на вкус.
-                </p>
-            </div>
-            <div class="feature-card animate-on-scroll animate-delay-1">
-                <div class="feature-card-num">04</div>
-                <div class="feature-icon"></div>
+
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                </div>
                 <div class="feature-title">Управление ПК</div>
-                <p class="feature-text">
-                    Открывай программы, делай скриншоты, запускай сценарии одним
-                    голосовым командой.
-                </p>
+                <p class="feature-desc">Открывай программы, делай скриншоты, ставь таймеры — одной голосовой командой.</p>
             </div>
-            <div class="feature-card animate-on-scroll animate-delay-2">
-                <div class="feature-card-num">05</div>
-                <div class="feature-icon"></div>
-                <div class="feature-title">Discord Rich Presence</div>
-                <p class="feature-text">
-                    Показывает статус JARVIS в Discord в реальном времени. Пусть
-                    все знают — у тебя есть ИИ-ассистент.
-                </p>
+
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                </div>
+                <div class="feature-title">Напоминания и таймеры</div>
+                <p class="feature-desc">JARVIS запомнит, разбудит, напомнит и предупредит. Автоматические уведомления на главной.</p>
             </div>
-            <div class="feature-card animate-on-scroll animate-delay-3">
-                <div class="feature-card-num">06</div>
-                <div class="feature-icon"></div>
-                <div class="feature-title">5 тем оформления</div>
-                <p class="feature-text">
-                    Синяя, красная, розовая, фиолетовая и светлая темы для
-                    WebView UI. Полная кастомизация интерфейса.
-                </p>
+
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path d="M9 21V12h6v9"/></svg>
+                </div>
+                <div class="feature-title">Сценарии</div>
+                <p class="feature-desc">Создавай свои цепочки команд — JARVIS выполнит их в один клик или по голосовой фразе.</p>
+            </div>
+
+            <!-- Big showcase card -->
+            <div class="feature-big animate-on-scroll">
+                <div class="feature-big-text">
+                    <div class="section-label">JARVIS V2 2.2</div>
+                    <h3>Новый интерфейс. Та&nbsp;же скорость.</h3>
+                    <p>Полностью переработанная главная с орбом-ассистентом, виджетами быстрых команд, напоминаний и погоды. Плавные анимации, сниженная нагрузка на CPU, мгновенный отклик.</p>
+                    <div style="margin-top:1.6rem; display:flex; gap:.6rem; flex-wrap:wrap;">
+                        <span class="badge badge-accent">Wake-Word</span>
+                        <span class="badge">GigaChat без VPN</span>
+                        <span class="badge">Discord RPC</span>
+                        <span class="badge badge-success">100% бесплатно</span>
+                    </div>
+                </div>
+                <div class="feature-big-visual"></div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ─── ТЕРМИНАЛ ДЕМО ─────────────────────────── -->
-<section class="section" style="background: var(--bg); padding-top: 0">
-    <div class="container">
-        <div style="max-width: 760px; margin: 0 auto">
-            <!-- Заголовок -->
-            <div
-                class="animate-on-scroll"
-                style="text-align: center; margin-bottom: 2rem"
-            >
-                <div class="section-label" style="justify-content: center">
-                    Демо в реальном времени
-                </div>
-                <h2 class="section-title">Терминал JARVIS</h2>
-                <p class="section-sub" style="margin: 0 auto">
-                    Напечатай команду и посмотри как отвечает JARVIS
-                </p>
-            </div>
-
-            <!-- Окно терминала -->
-            <div
-                class="animate-on-scroll"
-                id="demoTerminal"
-                style="
-                    background: #06090f;
-                    border: 1px solid var(--border2);
-                    border-radius: 12px;
-                    overflow: hidden;
-                    box-shadow:
-                        0 32px 64px rgba(0, 0, 0, 0.6),
-                        0 0 0 1px rgba(59, 130, 246, 0.1);
-                "
-            >
-                <!-- Titlebar -->
-                <div
-                    style="
-                        background: #0a0f1a;
-                        padding: 0.7rem 1rem;
-                        display: flex;
-                        align-items: center;
-                        gap: 0.8rem;
-                        border-bottom: 1px solid var(--border);
-                    "
-                >
-                    <div style="display: flex; gap: 0.4rem">
-                        <div
-                            style="
-                                width: 11px;
-                                height: 11px;
-                                border-radius: 50%;
-                                background: #ff5f57;
-                            "
-                        ></div>
-                        <div
-                            style="
-                                width: 11px;
-                                height: 11px;
-                                border-radius: 50%;
-                                background: #febc2e;
-                            "
-                        ></div>
-                        <div
-                            style="
-                                width: 11px;
-                                height: 11px;
-                                border-radius: 50%;
-                                background: #28c840;
-                            "
-                        ></div>
-                    </div>
-                    <div
-                        style="
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                            font-size: 0.7rem;
-                            letter-spacing: 2px;
-                            text-transform: uppercase;
-                            color: var(--text3);
-                            flex: 1;
-                            text-align: center;
-                        "
-                    >
-                        JARVIS AI Terminal
-                    </div>
-                    <button
-                        onclick="clearTerminal()"
-                        style="
-                            background: none;
-                            border: none;
-                            color: var(--text3);
-                            cursor: pointer;
-                            font-size: 0.7rem;
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                            letter-spacing: 1px;
-                            text-transform: uppercase;
-                            transition: color 0.2s;
-                        "
-                        onmouseover="this.style.color = '#fff'"
-                        onmouseout="this.style.color = ''"
-                    >
-                        ✕ Очистить
-                    </button>
-                </div>
-
-                <!-- Вывод -->
-                <div
-                    id="termOutput"
-                    style="
-                        padding: 1rem 1.2rem;
-                        min-height: 220px;
-                        max-height: 320px;
-                        overflow-y: auto;
-                        font-family: &quot;Courier New&quot;, monospace;
-                        font-size: 0.82rem;
-                        line-height: 1.7;
-                        color: #8899b4;
-                    "
-                >
-                    <div style="color: #3b82f6">
-                        [JARVIS] Система готова. Введите команду или выберите из
-                        списка ниже. &nbsp;️
-                    </div>
-                </div>
-
-                <!-- Быстрые команды -->
-                <div
-                    style="
-                        padding: 0.6rem 1rem;
-                        border-top: 1px solid var(--border);
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 0.4rem;
-                    "
-                >
-                    {% for cmd in ['привет', 'что умеешь?', 'открой браузер',
-                    'сделай скриншот', 'который час?', 'расскажи шутку',
-                    'выключи компьютер', 'статус системы'] %}
-                    <button
-                        onclick="termSend('{{ cmd }}')"
-                        style="
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                            font-size: 0.68rem;
-                            letter-spacing: 1px;
-                            background: rgba(59, 130, 246, 0.08);
-                            border: 1px solid rgba(59, 130, 246, 0.2);
-                            color: var(--cyan);
-                            padding: 0.28rem 0.65rem;
-                            border-radius: 20px;
-                            cursor: pointer;
-                            transition: all 0.2s;
-                            white-space: nowrap;
-                        "
-                        onmouseover="
-                            this.style.background = 'rgba(59,130,246,.18)'
-                        "
-                        onmouseout="
-                            this.style.background = 'rgba(59,130,246,.08)'
-                        "
-                    >
-                        {{ cmd }}
-                    </button>
-                    {% endfor %}
-                </div>
-
-                <!-- Ввод -->
-                <div
-                    style="
-                        padding: 0.7rem 1rem;
-                        border-top: 1px solid var(--border);
-                        display: flex;
-                        align-items: center;
-                        gap: 0.6rem;
-                        background: rgba(59, 130, 246, 0.03);
-                    "
-                >
-                    <span
-                        style="
-                            color: #3b82f6;
-                            font-family: &quot;Courier New&quot;, monospace;
-                            font-size: 0.82rem;
-                            flex-shrink: 0;
-                        "
-                        >jarvis@ai:~$</span
-                    >
-                    <input
-                        id="termInput"
-                        type="text"
-                        placeholder="Введите команду..."
-                        onkeydown="
-                            if (event.key === 'Enter') termSend(this.value);
-                        "
-                        style="
-                            flex: 1;
-                            background: none;
-                            border: none;
-                            outline: none;
-                            font-family: &quot;Courier New&quot;, monospace;
-                            font-size: 0.82rem;
-                            color: #fff;
-                            caret-color: #3b82f6;
-                        "
-                    />
-                    <button
-                        onclick="
-                            termSend(document.getElementById('termInput').value)
-                        "
-                        style="
-                            background: linear-gradient(
-                                135deg,
-                                #3b82f6,
-                                #1d4ed8
-                            );
-                            border: none;
-                            color: #fff;
-                            padding: 0.35rem 0.8rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 0.72rem;
-                            font-family: &quot;Oswald&quot;, sans-serif;
-                            letter-spacing: 1px;
-                            transition: opacity 0.2s;
-                        "
-                        onmouseover="this.style.opacity = '.8'"
-                        onmouseout="this.style.opacity = '1'"
-                    >
-                        Ввод
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ─── ОБНОВЛЕНИЯ ───────────────────────────── -->
+<!-- ═══ DEMO CHAT ═══════════════════════════════════════════ -->
 <section class="section">
     <div class="container">
-        <div style="max-width: 580px; margin-bottom: 0">
-            <div class="section-label animate-on-scroll">История версий</div>
-            <h2 class="section-title animate-on-scroll">Обновления</h2>
-            <p class="section-sub animate-on-scroll">
-                Последние изменения и улучшения JARVIS AI Assistant
-            </p>
+        <div class="section-head animate-on-scroll">
+            <div class="section-label">Демо</div>
+            <h2>Просто&nbsp;разговаривай</h2>
+            <p>Никаких сложных команд. JARVIS понимает естественную речь и отвечает голосом.</p>
+        </div>
+
+        <div class="demo-wrap animate-on-scroll">
+            <div class="demo-card">
+                <div class="demo-msg you">
+                    <div class="demo-avatar">Я</div>
+                    <div class="demo-bubble">Джарвис, какая сегодня погода?</div>
+                </div>
+                <div class="demo-msg">
+                    <div class="demo-avatar bot">J</div>
+                    <div class="demo-bubble">В Москве сейчас 13°, небольшая облачность. К вечеру до 18°.<small>GigaChat · 0.4 с</small></div>
+                </div>
+                <div class="demo-msg you">
+                    <div class="demo-avatar">Я</div>
+                    <div class="demo-bubble">Поставь таймер на 10 минут</div>
+                </div>
+                <div class="demo-msg">
+                    <div class="demo-avatar bot">J</div>
+                    <div class="demo-bubble">Готово. Таймер на 10 минут запущен — напомню, когда время выйдет ⏱<small>Edge TTS · озвучено</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ COMMANDS ════════════════════════════════════════════ -->
+<section class="section">
+    <div class="container">
+        <div class="section-head animate-on-scroll">
+            <div class="section-label">Команды</div>
+            <h2>Всё, что&nbsp;нужно</h2>
+            <p>Десятки готовых команд. Создавай свои — JARVIS запомнит и выполнит.</p>
+        </div>
+
+        <div class="cmds animate-on-scroll">
+            <div class="cmd"><div class="cmd-icon">▶</div><div class="cmd-text"><b>«Открой YouTube»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">☁</div><div class="cmd-text"><b>«Погода на завтра»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">♪</div><div class="cmd-text"><b>«Включи музыку»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">⏱</div><div class="cmd-text"><b>«Таймер на 10 минут»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">🔒</div><div class="cmd-text"><b>«Заблокируй ПК»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">📷</div><div class="cmd-text"><b>«Сделай скриншот»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">🔆</div><div class="cmd-text"><b>«Прибавь яркость»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">🎙</div><div class="cmd-text"><b>«Запиши заметку»</b></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ UPDATES TIMELINE ════════════════════════════════════ -->
+<section class="section">
+    <div class="container">
+        <div class="section-head animate-on-scroll">
+            <div class="section-label">Обновления</div>
+            <h2>Постоянно&nbsp;улучшается</h2>
+            <p>JARVIS активно развивается — каждое обновление приносит новые возможности.</p>
         </div>
 
         <div class="updates-timeline">
             <div class="update-item animate-on-scroll">
                 <div class="update-version">
-                    <span class="update-version-tag">v2.1</span>
+                    <span class="update-version-tag">V2 2.2</span>
                     <span class="update-version-badge">Текущая</span>
                 </div>
-                <div class="update-date">12 мая 2026</div>
+                <div class="update-date">12 мая 2026 · большое обновление</div>
                 <div class="update-changes">
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span
-                            >добовления новых функций</span
-                        >
-                    </div>
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span
-                            >Миграция аудиосистемы с PyAudio на
-                            sounddevice</span
-                        >
-                    </div>
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span></span>
-                    </div>
-                    <div class="update-change imp">
-                        <div class="update-change-dot"></div>
-                        <span></span>
-                    </div>
-                    <div class="update-change imp">
-                        <div class="update-change-dot"></div>
-                        <span></span>
-                    </div>
-                    <div class="update-change fix">
-                        <div class="update-change-dot"></div>
-                        <span></span>
-                    </div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Полностью переработанный интерфейс — новая главная с орбом-ассистентом</span></div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Виджеты быстрых команд, напоминаний и погоды прямо на главной</span></div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Новый раздел «Диалоги» с историей и поиском по чатам</span></div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Раздел «Задачи» с автоматическими напоминаниями через JARVIS</span></div>
+                    <div class="update-change imp"><div class="update-change-dot"></div><span>Плавные анимации UI и переходы между экранами</span></div>
+                    <div class="update-change imp"><div class="update-change-dot"></div><span>Ускорение запуска приложения и снижение нагрузки на CPU</span></div>
+                    <div class="update-change fix"><div class="update-change-dot"></div><span>Исправлены ошибки сценариев и стабильность Wake-Word</span></div>
                 </div>
             </div>
 
             <div class="update-item animate-on-scroll">
                 <div class="update-version">
-                    <span class="update-version-tag">v2</span>
+                    <span class="update-version-tag">v22.0</span>
                 </div>
-                <div class="update-date">8 мая 2026</div>
+                <div class="update-date">15 мая 2025</div>
                 <div class="update-changes">
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span
-                            >Огроиное обновления и переписания с нуля</span
-                        >
-                    </div>
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span>)</span>
-                    </div>
-                    <div class="update-change imp">
-                        <div class="update-change-dot"></div>
-                        <span></span>
-                    </div>
-                    <div class="update-change fix">
-                        <div class="update-change-dot"></div>
-                        <span
-                            ></span
-                        >
-                    </div>
-                </div>
-            </div>
-
-            <div class="update-item animate-on-scroll">
-                <div class="update-version">
-                    <span class="update-version-tag">v20.0</span>
-                </div>
-                <div class="update-date">18 января 2025</div>
-                <div class="update-changes">
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span>Discord Rich Presence интеграция</span>
-                    </div>
-                    <div class="update-change new">
-                        <div class="update-change-dot"></div>
-                        <span
-                            >Система сценариев — пакетный запуск программ</span
-                        >
-                    </div>
-                    <div class="update-change imp">
-                        <div class="update-change-dot"></div>
-                        <span>Переход на Vosk для офлайн распознавания</span>
-                    </div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Первый публичный релиз JARVIS AI Assistant</span></div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Wake-Word, GigaChat без VPN, 6 TTS-движков</span></div>
+                    <div class="update-change new"><div class="update-change-dot"></div><span>Discord Rich Presence, голосовое управление ПК</span></div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ─── ПОСЛЕДНИЕ НОВОСТИ ─────────────────────────────── -->
-{% if latest_news %}
-<section class="section section-dark">
+<!-- ═══ CTA ═════════════════════════════════════════════════ -->
+<section class="section">
     <div class="container">
-        <div class="d-flex justify-between align-center flex-wrap gap-2 mb-3">
-            <div>
-                <div class="section-label animate-on-scroll">
-                    От разработчика
-                </div>
-                <h2 class="section-title animate-on-scroll">Новости</h2>
+        <div class="cta-card animate-on-scroll">
+            <div class="section-label">{{ site.cta_label }}</div>
+            <h2>{{ site.cta_title }}</h2>
+            <p>{{ site.cta_text }}</p>
+            <div class="hero-actions" style="margin-bottom:0">
+                <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">⬇ Скачать JARVIS {{ site.download_version }}</a>
+                <a href="{{ url_for('forum') }}" class="btn btn-secondary btn-lg">Задать вопрос</a>
             </div>
-            <a
-                href="{{ url_for('news') }}"
-                class="btn btn-secondary btn-sm animate-on-scroll"
-                >Все новости →</a
-            >
-        </div>
-        <div class="news-grid">
-            {% for article in latest_news %}
-            <div
-                class="news-card animate-on-scroll animate-delay-{{ loop.index }}"
-            >
-                {% if article['image_url'] %}
-                <img
-                    src="{{ article['image_url'] }}"
-                    alt="{{ article['title'] }}"
-                    class="news-card-img"
-                />
-                {% else %}
-                <div class="news-card-img-placeholder">📰</div>
-                {% endif %}
-                <div class="news-card-body">
-                    <div class="news-card-meta">
-                        {{ article['created_at'][:10] }} · {{ article['author']
-                        }}
-                    </div>
-                    <div class="news-card-title">{{ article['title'] }}</div>
-                    {% if article['excerpt'] %}
-                    <p class="news-card-excerpt">{{ article['excerpt'] }}</p>
-                    {% endif %}
-                    <div class="news-card-footer">
-                        <a
-                            href="{{ url_for('news_detail', nid=article['id']) }}"
-                            class="btn btn-secondary btn-sm"
-                            >Читать →</a
-                        >
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-<!-- ─── ПОДДЕРЖАТЬ ПРОЕКТ ─────────────────────────────── -->
-<section class="support-section">
-    <div class="container animate-on-scroll">
-        <div class="support-icon">♥</div>
-        <h2 class="support-title">Поддержи JARVIS</h2>
-        <p class="support-sub">
-            JARVIS разрабатывается одним человеком и распространяется бесплатно.
-            Если проект полезен — поддержи его на Boosty.
-        </p>
-        <div class="support-benefits">
-            <div class="support-benefit"> Ускорит разработку</div>
-            <div class="support-benefit"> Новые функции быстрее</div>
-            <div class="support-benefit"> Больше исправлений</div>
-            <div class="support-benefit"> Поддержка сообщества</div>
-        </div>
-        <a
-            href="https://boosty.to/photoshop24/donate"
-            target="_blank"
-            rel="noopener"
-            class="btn btn-support btn-lg"
-        >
-            ♥ Поддержать на Boosty
-        </a>
-        <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text3)">
-            Любая сумма имеет значение · Boosty.to
-        </p>
-    </div>
-</section>
-
-<!-- ─── CTA ───────────────────────────────────────────── -->
-<section class="cta-section">
-    <div class="container animate-on-scroll">
-        <h2 class="cta-title">Готов попробовать?</h2>
-        <p
-            class="section-sub"
-            style="margin: 1rem auto 2.5rem; text-align: center"
-        >
-            Установка занимает 2 минуты. GigaChat работает без VPN и
-            регистрации.
-        </p>
-        <div class="hero-actions">
-            <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg"
-                >⬇ Скачать JARVIS v22.0</a
-            >
-            <a href="{{ url_for('forum') }}" class="btn btn-secondary btn-lg"
-                >Задать вопрос</a
-            >
         </div>
     </div>
 </section>

@@ -116,6 +116,40 @@ DEFAULT_SETTINGS = {
     "event_text":         "26 мая 2026 — релиз JARVIS V2. До этого момента каждый день в 18:00 МСК открывается секрет. Разгадай загадку и узнай тизер новой фичи. Раскрой все секреты — получи бета-доступ.",
     "event_release_at":   "2026-05-26 18:00:00",
     "event_release_title":"JARVIS V2",
+
+    # ── Site-wide announcement banner (over navbar) ──
+    "ann_enabled":        "0",
+    "ann_text":           "🎉 Вышло большое обновление JARVIS V2 2.2 — обновитесь сегодня!",
+    "ann_link":           "/download",
+    "ann_style":          "accent",  # accent | success | warning | danger
+
+    # ── Hero (главная) ──
+    "hero_eyebrow":       "JARVIS V2 2.2 · доступно для Windows",
+    "hero_title_lead":    "Привет, я",
+    "hero_title_accent":  "JARVIS",
+    "hero_cta_primary":   "Скачать V2 2.2",
+    "hero_cta_secondary": "Возможности",
+    "hero_meta_1_num":    "2.2",
+    "hero_meta_1_label":  "V2 версия",
+    "hero_meta_2_num":    "6",
+    "hero_meta_2_label":  "TTS движков",
+    "hero_meta_3_num":    "3",
+    "hero_meta_3_label":  "AI провайдера",
+    "hero_meta_4_num":    "100%",
+    "hero_meta_4_label":  "Бесплатно",
+
+    # ── CTA блок внизу главной ──
+    "cta_label":          "Скачай прямо сейчас",
+    "cta_title":          "Твой личный AI на Windows",
+    "cta_text":           "Бесплатно. Без VPN. Без подписок. Один установщик — и JARVIS уже слушает.",
+
+    # ── Download страница ──
+    "download_version":   "V2 2.2",
+    "download_subtitle":  "JARVIS AI Assistant для Windows 10/11",
+
+    # ── Соц.ссылки в футере ──
+    "social_telegram":    "https://t.me/Jarvis_assistant_free",
+    "social_boosty":      "https://boosty.to/photoshop24/donate",
 }
 
 

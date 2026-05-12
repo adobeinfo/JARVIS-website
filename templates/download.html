@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% block title %}Скачать JARVIS v22.0{% endblock %} {%
+{% extends 'base.html' %} {% block title %}Скачать JARVIS {{ site.download_version }}{% endblock %} {%
 block content %}
 
 <div class="download-hero">
@@ -7,10 +7,10 @@ block content %}
 
     <div class="download-box animate-on-scroll">
         <div class="section-label">Последний релиз</div>
-        <div class="download-version">v22.0</div>
+        <div class="download-version">{{ site.download_version }}</div>
 
         <div class="download-info">
-            JARVIS AI Assistant для Windows 10/11<br />
+            {{ site.download_subtitle }}<br />
             Размер: <strong>{{ size_mb }} МБ</strong> &nbsp;·&nbsp; Установщик
         </div>
 
@@ -27,7 +27,7 @@ block content %}
                 gap: 0.7rem;
             "
         >
-            ⬇ Скачать JARVIS_Setup_v22.exe
+            ⬇ Скачать JARVIS_Setup_V2_2.2.exe
         </a>
         <div
             style="
@@ -58,7 +58,7 @@ block content %}
                 padding: 1.1rem;
             "
         >
-            ⬇ Скачать JARVIS_Setup_v22.exe
+            ⬇ Скачать JARVIS_Setup_V2_2.2.exe
         </a>
         <p
             style="
