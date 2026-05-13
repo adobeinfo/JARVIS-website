@@ -1,15 +1,16 @@
 {% extends 'admin/base.html' %}
+{% from '_icons.html' import icon %}
 {% block title %}Контент сайта — JARVIS Admin{% endblock %}
 {% block topbar %}Контент сайта{% endblock %}
 {% block content %}
 
 <div class="a-page-head">
   <div>
-    <h2>🎨 Контент сайта</h2>
+    <h2 style="display:flex;align-items:center;gap:.6rem;">{{ icon('palette', 22) }} Контент сайта</h2>
     <div class="desc">Изменяй главную, плашку-объявление, страницу скачивания и соц.ссылки прямо отсюда</div>
   </div>
   <div class="actions">
-    <a href="{{ url_for('index') }}" target="_blank" class="a-btn a-btn-secondary a-btn-sm">↗ Открыть сайт</a>
+    <a href="{{ url_for('index') }}" target="_blank" class="a-btn a-btn-secondary a-btn-sm">{{ icon('external', 13) }} Открыть сайт</a>
   </div>
 </div>
 
@@ -19,7 +20,7 @@
   <div class="a-card">
     <div class="a-card-head">
       <div>
-        <div class="a-card-title-lg">🔔 Плашка-объявление</div>
+        <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('bell', 16) }} Плашка-объявление</div>
         <div class="a-help" style="margin-top:0.3rem;">Появляется сверху над навбаром на всех страницах. Идеально для анонса релиза или акции.</div>
       </div>
       <label class="a-toggle">
@@ -31,7 +32,7 @@
     <div class="a-field">
       <label class="a-label">Текст объявления</label>
       <input class="a-input" type="text" name="ann_text" maxlength="200" value="{{ s.ann_text }}"
-             placeholder="🎉 Вышло большое обновление JARVIS V2 2.2 — обновитесь сегодня!" />
+             placeholder="Вышло большое обновление JARVIS V2 2.2 — обновитесь сегодня!" />
     </div>
 
     <div class="a-field-row">
@@ -53,7 +54,7 @@
   {# ─────────────── HERO ─────────────── #}
   <div class="a-card">
     <div class="a-card-head">
-      <div class="a-card-title-lg">🚀 Главная — Hero</div>
+      <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('rocket', 16) }} Главная — Hero</div>
     </div>
 
     <div class="a-field">
@@ -106,7 +107,7 @@
   {# ─────────────── CTA ─────────────── #}
   <div class="a-card">
     <div class="a-card-head">
-      <div class="a-card-title-lg">🎯 CTA-блок (внизу главной)</div>
+      <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('target', 16) }} CTA-блок (внизу главной)</div>
     </div>
     <div class="a-field">
       <label class="a-label">Лейбл (UPPERCASE над заголовком)</label>
@@ -125,7 +126,7 @@
   {# ─────────────── DOWNLOAD ─────────────── #}
   <div class="a-card">
     <div class="a-card-head">
-      <div class="a-card-title-lg">⬇ Страница скачивания</div>
+      <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('download', 16) }} Страница скачивания</div>
     </div>
     <div class="a-field-row">
       <div class="a-field" style="margin:0;">
@@ -133,16 +134,21 @@
         <input class="a-input" type="text" name="download_version" value="{{ s.download_version }}" />
       </div>
       <div class="a-field" style="margin:0;">
-        <label class="a-label">Подзаголовок</label>
-        <input class="a-input" type="text" name="download_subtitle" value="{{ s.download_subtitle }}" />
+        <label class="a-label">Размер файла (МБ)</label>
+        <input class="a-input" type="number" min="1" step="1" name="download_size_mb" value="{{ s.download_size_mb }}" />
+        <div class="a-help">Используется только если реального файла нет на сервере (отдаётся с GitHub).</div>
       </div>
+    </div>
+    <div class="a-field">
+      <label class="a-label">Подзаголовок</label>
+      <input class="a-input" type="text" name="download_subtitle" value="{{ s.download_subtitle }}" />
     </div>
   </div>
 
   {# ─────────────── SOCIAL ─────────────── #}
   <div class="a-card">
     <div class="a-card-head">
-      <div class="a-card-title-lg">🔗 Соц.ссылки (футер)</div>
+      <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('external', 16) }} Соц.ссылки (футер)</div>
     </div>
     <div class="a-field-row">
       <div class="a-field" style="margin:0;">
@@ -156,12 +162,92 @@
     </div>
   </div>
 
+  {# ─────────────── TG GATE ─────────────── #}
+  <div class="a-card" id="tg-gate">
+    <div class="a-card-head">
+      <div>
+        <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('megaphone', 16) }} TG-канал разработчика (рекомендация)</div>
+        <div class="a-help" style="margin-top:0.3rem;">
+          На странице <code>/download</code> рядом с кнопкой скачивания появится мягкая
+          плашка с рекомендацией подписаться. Не блокирует загрузку — просто промо.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="gate_tg_enabled" {% if s.gate_tg_enabled == '1' %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+
+    <div class="a-field-row">
+      <div class="a-field" style="margin:0;">
+        <label class="a-label">URL канала</label>
+        <input class="a-input" type="url" name="gate_tg_channel_url" value="{{ s.gate_tg_channel_url }}"
+               placeholder="https://t.me/Jarvis_free" />
+      </div>
+      <div class="a-field" style="margin:0;">
+        <label class="a-label">Название канала</label>
+        <input class="a-input" type="text" name="gate_tg_channel_name" value="{{ s.gate_tg_channel_name }}"
+               placeholder="@Jarvis_free" />
+      </div>
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Заголовок гейта</label>
+      <input class="a-input" type="text" name="gate_tg_title" value="{{ s.gate_tg_title }}" />
+    </div>
+    <div class="a-field">
+      <label class="a-label">Текст гейта</label>
+      <textarea class="a-textarea" name="gate_tg_text" rows="3">{{ s.gate_tg_text }}</textarea>
+    </div>
+  </div>
+
+  {# ─────────────── GAME ─────────────── #}
+  <div class="a-card" id="game">
+    <div class="a-card-head">
+      <div>
+        <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('gamepad', 16) }} Игра «Поймай орб JARVIS»</div>
+        <div class="a-help" style="margin-top:0.3rem;">
+          30-секундная аркада с лидербордом. Когда включена — появляется в навбаре. Скоры —
+          <a href="{{ url_for('admin_game') }}" style="color:var(--accent);">Игра · скоры</a>.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="game_enabled" {% if s.game_enabled == '1' %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+
+    <div class="a-field-row">
+      <div class="a-field" style="margin:0;">
+        <label class="a-label">Название игры (в шапке)</label>
+        <input class="a-input" type="text" name="game_title" value="{{ s.game_title }}" />
+      </div>
+      <div class="a-field" style="margin:0;">
+        <label class="a-label">Длительность раунда (мс)</label>
+        <input class="a-input" type="number" name="game_duration_ms" min="5000" max="600000" step="1000"
+               value="{{ s.game_duration_ms }}" />
+        <div class="a-help">По умолчанию 30000 = 30 секунд</div>
+      </div>
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Подзаголовок</label>
+      <input class="a-input" type="text" name="game_subtitle" value="{{ s.game_subtitle }}" />
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Приз (плашка над игрой) — опционально</label>
+      <input class="a-input" type="text" name="game_prize_text" value="{{ s.game_prize_text }}"
+             placeholder="Что получает топ-1, например: уникальный бета-ключ" />
+    </div>
+  </div>
+
   <div style="display:flex;gap:0.6rem;flex-wrap:wrap;position:sticky;bottom:1rem;
               padding:1rem;background:rgba(11,11,16,0.85);
               backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
               border:1px solid var(--line-2);border-radius:14px;">
-    <button type="submit" class="a-btn a-btn-primary">💾 Сохранить весь контент</button>
-    <a href="{{ url_for('index') }}" target="_blank" class="a-btn a-btn-ghost">↗ Проверить на сайте</a>
+    <button type="submit" class="a-btn a-btn-primary">{{ icon('save', 14) }} Сохранить весь контент</button>
+    <a href="{{ url_for('index') }}" target="_blank" class="a-btn a-btn-ghost">{{ icon('external', 14) }} Проверить на сайте</a>
   </div>
 </form>
 

@@ -157,13 +157,23 @@ def _hash_ip():
     return hashlib.md5(ip.encode()).hexdigest()[:12]
 
 
+_BOOL_SETTING_KEYS_BASE = {"summer_design", "event_active",
+                           "ann_enabled", "gate_tg_enabled", "game_enabled"}
+
+
 def _site_settings_dict():
-    """Подгружает все site_settings одним запросом и накладывает дефолты."""
+    """Подгружает все site_settings и для не-boolean ключей подставляет дефолт,
+    если в БД лежит пустая строка (защита от случайно затёртых полей)."""
     out = dict(DEFAULT_SETTINGS)
     try:
         rows = get_conn().execute("SELECT key, value FROM site_settings").fetchall()
         for r in rows:
-            out[r["key"]] = r["value"]
+            key, val = r["key"], r["value"]
+            if not val and key not in _BOOL_SETTING_KEYS_BASE and key in DEFAULT_SETTINGS:
+                # Пустая строка для текстового поля → дефолт
+                out[key] = DEFAULT_SETTINGS[key]
+            else:
+                out[key] = val
     except Exception:
         pass
     return out
@@ -176,6 +186,8 @@ def inject_globals():
     s["summer_design_bool"] = (s.get("summer_design", "0") == "1")
     s["event_active_bool"]  = (s.get("event_active",  "0") == "1")
     s["ann_enabled_bool"]   = (s.get("ann_enabled",   "0") == "1")
+    s["gate_tg_enabled_bool"] = (s.get("gate_tg_enabled", "0") == "1")
+    s["game_enabled_bool"]  = (s.get("game_enabled",  "0") == "1")
     return {
         "site":           s,
         "summer_design":  s["summer_design_bool"],
@@ -187,6 +199,13 @@ def inject_globals():
 # ═══════════════════════════════════════════════════════════════════════════════
 #  ПУБЛИЧНЫЕ МАРШРУТЫ
 # ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/favicon.ico")
+def favicon_ico():
+    """Старые браузеры запрашивают /favicon.ico — отдаём app.png."""
+    return send_file(os.path.join(_HERE, "static", "img", "favicon.png"),
+                     mimetype="image/png")
+
 
 @app.route("/shop-verification-QR2ONd4OmJ.txt")
 def shop_verification():
@@ -231,11 +250,16 @@ def download():
     local_exists = os.path.isfile(SETUP_FILE)
     has_url      = bool(GITHUB_RELEASE_URL and GITHUB_RELEASE_URL.strip())
 
-    # Размер файла
+    # Размер файла: реальный если есть локально, иначе из настроек админки
     if local_exists:
         size_mb = round(os.path.getsize(SETUP_FILE) / 1024 / 1024, 1)
     else:
-        size_mb = 1638  # 1.6 ГБ по умолчанию
+        raw = (get_setting("download_size_mb", "147") or "147").strip()
+        try:
+            val = float(raw)
+            size_mb = int(val) if val.is_integer() else round(val, 1)
+        except ValueError:
+            size_mb = 147
 
     # Скачивание доступно если: есть локальный файл ИЛИ есть URL
     file_available = local_exists or has_url
@@ -1008,28 +1032,157 @@ SITE_CONTENT_KEYS = [
     # cta
     "cta_label", "cta_title", "cta_text",
     # download
-    "download_version", "download_subtitle",
+    "download_version", "download_subtitle", "download_size_mb",
     # social
     "social_telegram", "social_boosty",
+    # TG gate
+    "gate_tg_enabled", "gate_tg_channel_url", "gate_tg_channel_name",
+    "gate_tg_title", "gate_tg_text",
+    # Game
+    "game_enabled", "game_title", "game_subtitle", "game_prize_text", "game_duration_ms",
 ]
+
+
+_BOOL_SETTING_KEYS = {"ann_enabled", "gate_tg_enabled", "game_enabled"}
 
 
 @app.route("/admin/site", methods=["GET", "POST"])
 @admin_required
 def admin_site_content():
     if request.method == "POST":
-        # Чекбокс ann_enabled — особый случай
-        set_setting("ann_enabled", "1" if request.form.get("ann_enabled") else "0")
+        # Чекбоксы — особый случай
+        for bk in _BOOL_SETTING_KEYS:
+            set_setting(bk, "1" if request.form.get(bk) else "0")
         for key in SITE_CONTENT_KEYS:
-            if key == "ann_enabled":
+            if key in _BOOL_SETTING_KEYS:
                 continue
             val = request.form.get(key, "")
-            # Не затираем дефолтом, если пусто — кладём пустую строку
             set_setting(key, val.strip())
         flash("Контент сайта обновлён.", "success")
         return redirect(url_for("admin_site_content"))
 
     return render_template("admin/site_content.html", s=_site_settings_dict())
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ИГРА «Поймай орб JARVIS»
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/game")
+def game_page():
+    if get_setting("game_enabled", "0") != "1":
+        flash("Игра сейчас выключена. Зайди позже!", "info")
+        return redirect(url_for("index"))
+
+    db = get_conn()
+    top_scores = db.execute(
+        "SELECT player_name, score, accuracy, combo_max, created_at "
+        "FROM game_scores ORDER BY score DESC, created_at ASC LIMIT 10"
+    ).fetchall()
+    total_plays = db.execute("SELECT COUNT(*) FROM game_scores").fetchone()[0]
+    best = db.execute("SELECT MAX(score) FROM game_scores").fetchone()[0] or 0
+    return render_template("game.html",
+                           top_scores=top_scores,
+                           total_plays=total_plays,
+                           best_score=best)
+
+
+@app.route("/api/game/score", methods=["POST"])
+def api_game_score():
+    if get_setting("game_enabled", "0") != "1":
+        return {"ok": False, "error": "Игра выключена"}, 403
+
+    data = request.get_json(silent=True) or {}
+    try:
+        score    = int(data.get("score", 0))
+        accuracy = int(data.get("accuracy", 0))
+        combo    = int(data.get("combo_max", 0))
+        duration = int(data.get("duration_ms", 30000))
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "Bad payload"}, 400
+
+    name = (data.get("name", "") or "").strip()[:40] or "Аноним"
+    # Базовая валидация — отсеять очевидную чушь
+    if score < 0 or score > 100000:
+        return {"ok": False, "error": "Невозможный счёт"}, 400
+    if accuracy < 0 or accuracy > 100:
+        accuracy = max(0, min(100, accuracy))
+    if duration < 5000 or duration > 600000:
+        return {"ok": False, "error": "Bad duration"}, 400
+
+    import hashlib
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+
+    db = get_conn()
+    # Анти-спам: не более 1 записи за 10 секунд с одного IP
+    last = db.execute(
+        "SELECT created_at FROM game_scores WHERE ip_hash=? "
+        "ORDER BY created_at DESC LIMIT 1", (ip_hash,)
+    ).fetchone()
+    if last:
+        prev = _dt.datetime.strptime(last["created_at"], "%Y-%m-%d %H:%M:%S")
+        if (_dt.datetime.utcnow() - prev).total_seconds() < 10:
+            return {"ok": False, "error": "Слишком быстро, подожди немного"}, 429
+
+    db.execute(
+        "INSERT INTO game_scores (player_name, score, accuracy, combo_max, duration_ms, ip_hash) "
+        "VALUES (?,?,?,?,?,?)",
+        (name, score, accuracy, combo, duration, ip_hash)
+    )
+    db.commit()
+
+    # Возвращаем место в лидерборде
+    rank = db.execute(
+        "SELECT COUNT(*)+1 FROM game_scores WHERE score > ?", (score,)
+    ).fetchone()[0]
+    return {"ok": True, "rank": rank}
+
+
+@app.route("/api/game/leaderboard")
+def api_game_leaderboard():
+    db = get_conn()
+    rows = db.execute(
+        "SELECT player_name, score, accuracy, combo_max, created_at "
+        "FROM game_scores ORDER BY score DESC, created_at ASC LIMIT 10"
+    ).fetchall()
+    return {"top": [dict(r) for r in rows]}
+
+
+# ── Admin: игра ───────────────────────────────────────────────────────────────
+@app.route("/admin/game")
+@admin_required
+def admin_game():
+    db = get_conn()
+    scores = db.execute(
+        "SELECT * FROM game_scores ORDER BY score DESC, created_at ASC LIMIT 100"
+    ).fetchall()
+    total = db.execute("SELECT COUNT(*) FROM game_scores").fetchone()[0]
+    unique = db.execute("SELECT COUNT(DISTINCT ip_hash) FROM game_scores").fetchone()[0]
+    best = db.execute("SELECT MAX(score) FROM game_scores").fetchone()[0] or 0
+    return render_template("admin/game.html",
+                           scores=scores, total=total,
+                           unique=unique, best=best)
+
+
+@app.route("/admin/game/clear", methods=["POST"])
+@admin_required
+def admin_game_clear():
+    db = get_conn()
+    db.execute("DELETE FROM game_scores")
+    db.commit()
+    flash("Все результаты игры удалены.", "info")
+    return redirect(url_for("admin_game"))
+
+
+@app.route("/admin/game/<int:sid>/delete", methods=["POST"])
+@admin_required
+def admin_game_score_delete(sid):
+    db = get_conn()
+    db.execute("DELETE FROM game_scores WHERE id=?", (sid,))
+    db.commit()
+    flash("Результат удалён.", "info")
+    return redirect(url_for("admin_game"))
 
 
 # ─── 404 ───────────────────────────────────────────────────────────────────────

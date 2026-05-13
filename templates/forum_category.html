@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block title %}{{ category['name'] }} — Форум JARVIS{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}{{ category['name'] }} — Форум JARVIS{% endblock %}
+{% block content %}
 
 <div class="page-header">
     <div class="page-header-inner">
@@ -37,7 +40,7 @@
             {% set alt = post['id'] % 5 %}
             <a href="{{ url_for('forum_post', cat_id=category['id'], post_id=post['id']) }}">
                 <div class="post-item animate-on-scroll">
-                    {% if post['is_pinned'] %}<div class="post-item-pin">📌</div>{% endif %}
+                    {% if post['is_pinned'] %}<div class="post-item-pin" title="Закреплено">{{ icon('pin', 14, 'ico ico-warn') }}</div>{% endif %}
                     <div class="post-avatar {% if alt %}alt-{{ alt }}{% endif %}">{{ initial }}</div>
                     <div class="post-item-info">
                         <div class="post-item-title">{{ post['title'] }}</div>
@@ -46,7 +49,7 @@
                             <span>·</span>
                             <span>{{ post['created_at'][:10] }}</span>
                             {% if post['is_locked'] %}
-                            <span class="badge badge-muted" style="padding:.15rem .5rem; font-size:.62rem;">🔒 Закрыто</span>
+                            <span class="badge badge-muted" style="padding:.15rem .5rem; font-size:.62rem;">{{ icon('lock', 11) }} Закрыто</span>
                             {% endif %}
                         </div>
                     </div>
@@ -66,7 +69,7 @@
         </div>
         {% else %}
         <div class="empty-state animate-on-scroll">
-            <div class="empty-state-icon">💬</div>
+            <div class="empty-state-icon">{{ icon('forum', 28) }}</div>
             <div class="empty-state-title">Тем пока нет</div>
             <div class="empty-state-desc">Стань первым, кто откроет обсуждение в этой категории.</div>
             <a href="{{ url_for('forum_new_post', cat_id=category['id']) }}" class="btn btn-primary">

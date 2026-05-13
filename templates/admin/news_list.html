@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% from '_icons.html' import icon %}
 {% block title %}Новости — JARVIS Admin{% endblock %}
 {% block topbar %}Новости{% endblock %}
 {% block content %}
@@ -9,7 +10,7 @@
     <div class="desc">{{ articles|length }} {% if articles|length == 1 %}статья{% elif articles|length < 5 %}статьи{% else %}статей{% endif %}</div>
   </div>
   <div class="actions">
-    <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary">+ Новая статья</a>
+    <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary">{{ icon('plus', 14) }} Новая статья</a>
   </div>
 </div>
 
@@ -47,10 +48,10 @@
         <td>
           <div class="actions" style="justify-content:flex-end;">
             <a href="{{ url_for('admin_news_edit', nid=art['id']) }}"
-               class="a-btn a-btn-secondary a-btn-xs">✏ Изменить</a>
+               class="a-btn a-btn-secondary a-btn-xs">{{ icon('edit', 12) }} Изменить</a>
             <form method="POST" action="{{ url_for('admin_news_delete', nid=art['id']) }}"
                   onsubmit="return confirm('Удалить новость безвозвратно?')">
-              <button class="a-btn a-btn-danger a-btn-xs" type="submit">✕</button>
+              <button class="a-btn a-btn-danger a-btn-xs" type="submit">{{ icon('trash', 12) }}</button>
             </form>
           </div>
         </td>

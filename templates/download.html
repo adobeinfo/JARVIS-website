@@ -1,5 +1,7 @@
-{% extends 'base.html' %} {% block title %}Скачать JARVIS {{ site.download_version }}{% endblock %} {%
-block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Скачать JARVIS {{ site.download_version }}{% endblock %}
+{% block content %}
 
 <div class="download-hero">
     <div class="hero-bg"></div>
@@ -27,7 +29,7 @@ block content %}
                 gap: 0.7rem;
             "
         >
-            ⬇ Скачать JARVIS_Setup_V2_2.2.exe
+            {{ icon('download', 18) }} Скачать JARVIS_Setup_V2_2.2.exe
         </a>
         <div
             style="
@@ -40,11 +42,7 @@ block content %}
                 color: var(--text3);
             "
         >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                    d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
-                />
-            </svg>
+            {{ icon('github', 13) }}
             GitHub Releases · Бесплатно · Без рекламы
         </div>
         {% else %} {# Локально: отдаём файл напрямую #}
@@ -58,7 +56,7 @@ block content %}
                 padding: 1.1rem;
             "
         >
-            ⬇ Скачать JARVIS_Setup_V2_2.2.exe
+            {{ icon('download', 18) }} Скачать JARVIS_Setup_V2_2.2.exe
         </a>
         <p
             style="
@@ -72,97 +70,48 @@ block content %}
         </p>
         {% endif %}
 
+        <!-- ─── Рекомендация TG-канала разработчика (не блокирует загрузку) ─── -->
+        {% if site.gate_tg_enabled_bool %}
+        <a class="tg-promo" href="{{ site.gate_tg_channel_url }}" target="_blank" rel="noopener">
+            <div class="tg-promo-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+            </div>
+            <div class="tg-promo-body">
+                <div class="tg-promo-title">{{ site.gate_tg_title }}</div>
+                <div class="tg-promo-text">{{ site.gate_tg_text }}</div>
+            </div>
+            <div class="tg-promo-cta">
+                <span>{{ site.gate_tg_channel_name }}</span>
+                <span class="arrow">↗</span>
+            </div>
+        </a>
+        {% endif %}
+
         <!-- Доверительные значки -->
-        <div
-            style="
-                display: flex;
-                gap: 0.6rem;
-                justify-content: center;
-                flex-wrap: wrap;
-                margin-top: 1.2rem;
-            "
-        >
-            <div
-                style="
-                    display: flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                    font-size: 0.72rem;
-                    color: var(--text3);
-                    background: var(--bg2);
-                    border: 1px solid var(--border);
-                    padding: 0.35rem 0.7rem;
-                    border-radius: 20px;
-                "
-            >
-                ✅ Без вирусов
-            </div>
-            <div
-                style="
-                    display: flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                    font-size: 0.72rem;
-                    color: var(--text3);
-                    background: var(--bg2);
-                    border: 1px solid var(--border);
-                    padding: 0.35rem 0.7rem;
-                    border-radius: 20px;
-                "
-            >
-                🔒 Безопасный
-            </div>
-            <div
-                style="
-                    display: flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                    font-size: 0.72rem;
-                    color: var(--text3);
-                    background: var(--bg2);
-                    border: 1px solid var(--border);
-                    padding: 0.35rem 0.7rem;
-                    border-radius: 20px;
-                "
-            >
-                💰 Бесплатно
-            </div>
-            <div
-                style="
-                    display: flex;
-                    align-items: center;
-                    gap: 0.35rem;
-                    font-size: 0.72rem;
-                    color: var(--text3);
-                    background: var(--bg2);
-                    border: 1px solid var(--border);
-                    padding: 0.35rem 0.7rem;
-                    border-radius: 20px;
-                "
-            >
-                🇷🇺 Русский язык
-            </div>
+        <div class="trust-row">
+            <span class="trust-chip">{{ icon('shield-check', 13) }} Без вирусов</span>
+            <span class="trust-chip">{{ icon('lock', 13) }} Безопасный</span>
+            <span class="trust-chip">{{ icon('star', 13) }} Бесплатно</span>
+            <span class="trust-chip">{{ icon('globe', 13) }} Русский язык</span>
         </div>
 
         <!-- Системные требования -->
         <div class="requirements" style="margin-top: 1.5rem">
             <h4>Системные требования</h4>
             <div class="req-item">
-                <span class="req-icon">🖥️</span> Windows 10 / 11 (64-bit)
+                <span class="req-icon">{{ icon('monitor', 16) }}</span> Windows 10 / 11 (64-bit)
             </div>
             <div class="req-item">
-                <span class="req-icon">🧠</span> ОЗУ: от 4 ГБ (рекомендуется 8
-                ГБ)
+                <span class="req-icon">{{ icon('cpu', 16) }}</span> ОЗУ: от 4 ГБ (рекомендуется 8 ГБ)
             </div>
             <div class="req-item">
-                <span class="req-icon">💾</span> Диск: ~2 ГБ свободного места
+                <span class="req-icon">{{ icon('hard-drive', 16) }}</span> Диск: ~2 ГБ свободного места
             </div>
             <div class="req-item">
-                <span class="req-icon">🎙️</span> Микрофон для голосового
-                управления
+                <span class="req-icon">{{ icon('mic', 16) }}</span> Микрофон для голосового управления
             </div>
             <div class="req-item">
-                <span class="req-icon">🌐</span> Интернет для AI-запросов
+                <span class="req-icon">{{ icon('wifi', 16) }}</span> Интернет для AI-запросов
             </div>
         </div>
     </div>

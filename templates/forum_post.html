@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block title %}{{ post['title'] }} — Форум JARVIS{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}{{ post['title'] }} — Форум JARVIS{% endblock %}
+{% block content %}
 
 <div class="page-header">
     <div class="page-header-inner">
@@ -30,8 +33,8 @@
                     </div>
                 </div>
                 <div class="thread-post-badges">
-                    {% if post['is_pinned'] %}<span class="badge badge-accent">📌 Закреплено</span>{% endif %}
-                    {% if post['is_locked'] %}<span class="badge badge-muted">🔒 Закрыто</span>{% endif %}
+                    {% if post['is_pinned'] %}<span class="badge badge-accent">{{ icon('pin', 12) }} Закреплено</span>{% endif %}
+                    {% if post['is_locked'] %}<span class="badge badge-muted">{{ icon('lock', 12) }} Закрыто</span>{% endif %}
                 </div>
             </div>
             <div class="thread-post-content">{{ post['content'] }}</div>
@@ -83,7 +86,7 @@
         </div>
         {% else %}
         <div class="locked-banner">
-            🔒 <span>Тема закрыта для новых ответов.</span>
+            {{ icon('lock', 16) }} <span>Тема закрыта для новых ответов.</span>
         </div>
         {% endif %}
 

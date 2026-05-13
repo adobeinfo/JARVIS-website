@@ -1,59 +1,60 @@
 {% extends 'admin/base.html' %}
+{% from '_icons.html' import icon %}
 {% block title %}Дашборд — JARVIS Admin{% endblock %}
 {% block topbar %}Дашборд{% endblock %}
 {% block content %}
 
 <div class="a-page-head">
   <div>
-    <h2>Привет, {{ session.get('admin_username', 'admin') }} 👋</h2>
+    <h2>Привет, {{ session.get('admin_username', 'admin') }}</h2>
     <div class="desc">Сводка по сайту, форуму и скачиваниям JARVIS V2 2.2</div>
   </div>
   <div class="actions">
-    <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary a-btn-sm">+ Новость</a>
-    <a href="{{ url_for('admin_site_content') }}" class="a-btn a-btn-secondary a-btn-sm">🎨 Контент сайта</a>
+    <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary a-btn-sm">{{ icon('plus', 14) }} Новость</a>
+    <a href="{{ url_for('admin_site_content') }}" class="a-btn a-btn-secondary a-btn-sm">{{ icon('palette', 14) }} Контент сайта</a>
   </div>
 </div>
 
 {# ───── VISITS STATS ───── #}
-<div class="a-card-title" style="margin-bottom:0.7rem;">📈 Посещения</div>
+<div class="a-card-title" style="margin-bottom:0.7rem; display:flex; align-items:center; gap:.5rem;">{{ icon('trending-up', 14) }} Посещения</div>
 <div class="a-stat-grid">
   <div class="a-stat">
-    <div class="a-stat-icon">🌍</div>
+    <div class="a-stat-icon">{{ icon('globe', 18, 'ico-accent') }}</div>
     <div class="a-stat-num">{{ stats.visits_total }}</div>
     <div class="a-stat-label">Всего визитов</div>
   </div>
   <div class="a-stat alt-2">
-    <div class="a-stat-icon">📅</div>
+    <div class="a-stat-icon">{{ icon('calendar', 18, 'ico-success') }}</div>
     <div class="a-stat-num">{{ stats.visits_today }}</div>
     <div class="a-stat-label">Сегодня</div>
   </div>
   <div class="a-stat alt-1">
-    <div class="a-stat-icon">📆</div>
+    <div class="a-stat-icon">{{ icon('chart', 18, 'ico-accent') }}</div>
     <div class="a-stat-num">{{ stats.visits_week }}</div>
     <div class="a-stat-label">За 7 дней</div>
   </div>
   <div class="a-stat alt-3">
-    <div class="a-stat-icon">👤</div>
+    <div class="a-stat-icon">{{ icon('user', 18, 'ico-warn') }}</div>
     <div class="a-stat-num">{{ stats.unique_today }}</div>
     <div class="a-stat-label">Уникальных сегодня</div>
   </div>
 </div>
 
 {# ───── DOWNLOADS STATS ───── #}
-<div class="a-card-title" style="margin-bottom:0.7rem;">⬇ Скачивания установщика</div>
+<div class="a-card-title" style="margin-bottom:0.7rem; display:flex; align-items:center; gap:.5rem;">{{ icon('download', 14) }} Скачивания установщика</div>
 <div class="a-stat-grid">
   <div class="a-stat alt-2">
-    <div class="a-stat-icon">📦</div>
+    <div class="a-stat-icon">{{ icon('package', 18, 'ico-success') }}</div>
     <div class="a-stat-num">{{ stats.dl_total }}</div>
     <div class="a-stat-label">Всего скачиваний</div>
   </div>
   <div class="a-stat">
-    <div class="a-stat-icon">🔽</div>
+    <div class="a-stat-icon">{{ icon('download', 18, 'ico-accent') }}</div>
     <div class="a-stat-num">{{ stats.dl_today }}</div>
     <div class="a-stat-label">Сегодня</div>
   </div>
   <div class="a-stat alt-1">
-    <div class="a-stat-icon">📊</div>
+    <div class="a-stat-icon">{{ icon('bar-chart', 18, 'ico-accent') }}</div>
     <div class="a-stat-num">{{ stats.dl_week }}</div>
     <div class="a-stat-label">За 7 дней</div>
   </div>
@@ -89,7 +90,7 @@
 
   <div class="a-card">
     <div class="a-card-head">
-      <div class="a-card-title-lg">🔥 Популярные страницы</div>
+      <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('flame', 16, 'ico ico-warn') }} Популярные страницы</div>
     </div>
     {% if top_pages %}
       {% set max_p = top_pages[0]['cnt'] %}
@@ -117,33 +118,35 @@
 
   <div class="a-card">
     <div class="a-card-head">
-      <div class="a-card-title-lg">📋 Контент</div>
+      <div class="a-card-title-lg">Контент</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:0;">
-      {% for label, val, hint in [
-          ('Новости', stats.news_count, '📰'),
-          ('Тем на форуме', stats.posts_count, '💬'),
-          ('Ответов', stats.replies_count, '↩'),
-          ('Просмотров форума', stats.total_views, '👁')
+      {% for label, val, ic in [
+          ('Новости', stats.news_count, 'news'),
+          ('Тем на форуме', stats.posts_count, 'forum'),
+          ('Ответов', stats.replies_count, 'message'),
+          ('Просмотров форума', stats.total_views, 'eye')
       ] %}
       <div style="display:flex;justify-content:space-between;align-items:center;
                   padding:0.7rem 0;border-bottom:1px solid var(--line);">
-        <span style="color:var(--text-2);font-size:0.92rem;">{{ hint }} {{ label }}</span>
+        <span style="color:var(--text-2);font-size:0.92rem;display:inline-flex;align-items:center;gap:.5rem;">
+          {{ icon(ic, 14, 'ico ico-muted') }} {{ label }}
+        </span>
         <span style="font-weight:700;font-size:1.15rem;letter-spacing:-0.02em;">{{ val }}</span>
       </div>
       {% endfor %}
     </div>
     <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:1.2rem;">
-      <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary a-btn-sm">+ Написать новость</a>
-      <a href="{{ url_for('admin_news') }}" class="a-btn a-btn-secondary a-btn-sm">📰 Все новости</a>
-      <a href="{{ url_for('admin_forum') }}" class="a-btn a-btn-secondary a-btn-sm">💬 Форум</a>
+      <a href="{{ url_for('admin_news_create') }}" class="a-btn a-btn-primary a-btn-sm">{{ icon('plus', 14) }} Написать новость</a>
+      <a href="{{ url_for('admin_news') }}" class="a-btn a-btn-secondary a-btn-sm">{{ icon('news', 14) }} Все новости</a>
+      <a href="{{ url_for('admin_forum') }}" class="a-btn a-btn-secondary a-btn-sm">{{ icon('forum', 14) }} Форум</a>
     </div>
   </div>
 </div>
 
 {# ───── RECENT POSTS ───── #}
 {% if recent_posts %}
-<div class="a-card-title" style="margin-bottom:0.7rem;">💬 Последние темы форума</div>
+<div class="a-card-title" style="margin-bottom:0.7rem; display:flex; align-items:center; gap:.5rem;">{{ icon('forum', 14) }} Последние темы форума</div>
 <div class="a-table-wrap">
   <table class="a-table">
     <thead>
@@ -153,7 +156,7 @@
         <th>Категория</th>
         <th>Автор</th>
         <th>Дата</th>
-        <th>👁</th>
+        <th>{{ icon('eye', 12) }}</th>
         <th></th>
       </tr>
     </thead>
@@ -174,7 +177,7 @@
         <td>
           <form method="POST" action="{{ url_for('admin_forum_post_delete', pid=post['id']) }}"
                 onsubmit="return confirm('Удалить тему?')">
-            <button class="a-btn a-btn-danger a-btn-xs" type="submit">✕</button>
+            <button class="a-btn a-btn-danger a-btn-xs" type="submit">{{ icon('trash', 13) }}</button>
           </form>
         </td>
       </tr>

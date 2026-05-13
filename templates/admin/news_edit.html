@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% from '_icons.html' import icon %}
 {% block title %}{{ 'Редактировать' if article else 'Создать новость' }} — JARVIS Admin{% endblock %}
 {% block topbar %}{{ 'Редактировать новость' if article else 'Новая новость' }}{% endblock %}
 {% block content %}
@@ -53,7 +54,7 @@
 
     <div class="actions" style="margin-top:1.5rem;">
       <button type="submit" class="a-btn a-btn-primary">
-        {{ '💾 Сохранить' if article else '🚀 Создать' }}
+        {% if article %}{{ icon('save', 14) }} Сохранить{% else %}{{ icon('rocket', 14) }} Создать{% endif %}
       </button>
       <a href="{{ url_for('admin_news') }}" class="a-btn a-btn-ghost">Отмена</a>
     </div>

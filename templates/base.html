@@ -1,4 +1,4 @@
-<!doctype html>
+{% from '_icons.html' import icon %}<!doctype html>
 <html lang="ru">
     <head>
         <meta charset="UTF-8" />
@@ -10,6 +10,15 @@
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            rel="icon"
+            type="image/png"
+            href="{{ url_for('static', filename='img/favicon.png') }}"
+        />
+        <link
+            rel="apple-touch-icon"
+            href="{{ url_for('static', filename='img/favicon.png') }}"
+        />
         <link
             rel="stylesheet"
             href="{{ url_for('static', filename='css/style.css') }}"
@@ -29,9 +38,9 @@
 
         {% if summer_design %}
         <div class="summer-banner">
-            <span>☀ Летний режим JARVIS</span>
+            <span>{{ icon('sparkles', 14) }} Летний режим JARVIS</span>
             {% if event_active %}
-            <a href="{{ url_for('event_page') }}">🎉 Перейти на эвент →</a>
+            <a href="{{ url_for('event_page') }}">Перейти на эвент {{ icon('arrow-right', 14) }}</a>
             {% endif %}
         </div>
         {% endif %}
@@ -63,26 +72,33 @@
                         class="{{ 'active' if request.endpoint=='download' else '' }}"
                         >Скачать</a
                     >
+                    {% if site.game_enabled_bool %}
+                    <a
+                        href="{{ url_for('game_page') }}"
+                        class="nav-game {{ 'active' if request.endpoint=='game_page' else '' }}"
+                        >{{ icon('gamepad', 15) }} Игра</a
+                    >
+                    {% endif %}
                     {% if event_active %}
                     <a
                         href="{{ url_for('event_page') }}"
                         class="nav-event {{ 'active' if request.endpoint=='event_page' else '' }}"
                         style="background:linear-gradient(90deg,#ff5e62,#ffb347);color:#fff !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;"
-                        >☀ Эвент</a
+                        >{{ icon('sparkles', 14) }} Эвент</a
                     >
                     {% endif %}
                 </ul>
 
                 <div class="nav-right">
                     <a
-                        href="https://boosty.to/photoshop24/donate"
+                        href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
                         target="_blank"
                         rel="noopener"
                         class="nav-support"
-                        >♥ Поддержать</a
+                        >{{ icon('heart', 14) }} Поддержать</a
                     >
                     <a href="{{ url_for('download') }}" class="nav-cta"
-                        >⬇ Скачать</a
+                        >{{ icon('download', 14) }} Скачать</a
                     >
                     <div
                         class="nav-burger"
@@ -101,8 +117,10 @@
         <div class="flash-container">
             {% for category, message in messages %}
             <div class="flash flash-{{ category }}">
-                {% if category == 'success' %}✓{% elif category == 'error' %}✗{%
-                else %}ℹ{% endif %} {{ message }}
+                {% if category == 'success' %}{{ icon('check-circle', 16) }}
+                {%- elif category == 'error' %}{{ icon('alert', 16) }}
+                {%- else %}{{ icon('info', 16) }}{% endif %}
+                <span>{{ message }}</span>
             </div>
             {% endfor %}
         </div>
@@ -133,7 +151,7 @@
                     <ul class="footer-links">
                         <li>
                             <a
-                                href="{{ site.social_telegram or 'https://t.me/Jarvis_assistant_free' }}"
+                                href="{{ site.social_telegram or 'https://t.me/Jarvis_free' }}"
                                 target="_blank"
                                 >Telegram канал</a
                             >
@@ -142,7 +160,7 @@
                             <a
                                 href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
                                 target="_blank"
-                                >♥ Поддержать на Boosty</a
+                                >{{ icon('heart', 13) }} Поддержать на Boosty</a
                             >
                         </li>
                         <li>
@@ -158,14 +176,14 @@
             <div class="footer-bottom">
                 <span>© 2024–2026 JARVIS Team. Все права защищены.</span>
                 <div style="display: flex; gap: 1.5rem; align-items: center">
-                    <a href="{{ site.social_telegram or 'https://t.me/Jarvis_assistant_free' }}" target="_blank"
+                    <a href="{{ site.social_telegram or 'https://t.me/Jarvis_free' }}" target="_blank"
                         >Telegram</a
                     >
                     <a
                         href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
                         target="_blank"
                         style="color: var(--gold)"
-                        >♥ Boosty</a
+                        >{{ icon('heart', 13) }} Boosty</a
                     >
                 </div>
             </div>
@@ -188,7 +206,7 @@
 
         <div class="chat-panel" id="chatPanel">
             <div class="chat-header">
-                <div class="chat-header-avatar">🤖</div>
+                <div class="chat-header-avatar">{{ icon('bot', 22) }}</div>
                 <div class="chat-header-info">
                     <div class="chat-header-name">JARVIS AI</div>
                     <div class="chat-header-status">
@@ -196,56 +214,38 @@
                         GigaChat · Онлайн
                     </div>
                 </div>
-                <button class="chat-close" onclick="toggleChat()">✕</button>
+                <button class="chat-close" onclick="toggleChat()">{{ icon('x', 14) }}</button>
             </div>
 
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-msg bot">
-                    <div class="chat-msg-avatar">🤖</div>
+                    <div class="chat-msg-avatar">{{ icon('bot', 16) }}</div>
                     <div class="chat-msg-bubble">
                         Привет! Я — AI-ассистент сайта JARVIS. Могу рассказать о
                         программе, помочь с установкой и ответить на любой
-                        вопрос ✨
+                        вопрос.
                     </div>
                 </div>
             </div>
 
             <div class="chat-suggestions" id="chatSuggestions">
-                <button
-                    class="chat-suggestion"
-                    onclick="sendSuggestion('Как скачать JARVIS?')"
-                >
-                    &#x2B07; Скачать
+                <button class="chat-suggestion" onclick="sendSuggestion('Как скачать JARVIS?')">
+                    {{ icon('download', 13) }} Скачать
                 </button>
-                <button
-                    class="chat-suggestion"
-                    onclick="sendSuggestion('Какие системные требования?')"
-                >
-                    &#x1F4BB; Требования
+                <button class="chat-suggestion" onclick="sendSuggestion('Какие системные требования?')">
+                    {{ icon('cpu', 13) }} Требования
                 </button>
-                <button
-                    class="chat-suggestion"
-                    onclick="sendSuggestion('Что такое Wake-Word?')"
-                >
-                    &#x1F3A4; Wake-Word
+                <button class="chat-suggestion" onclick="sendSuggestion('Что такое Wake-Word?')">
+                    {{ icon('mic', 13) }} Wake-Word
                 </button>
-                <button
-                    class="chat-suggestion"
-                    onclick="sendSuggestion('Как настроить GigaChat?')"
-                >
-                    &#x1F916; GigaChat
+                <button class="chat-suggestion" onclick="sendSuggestion('Как настроить GigaChat?')">
+                    {{ icon('bot', 13) }} GigaChat
                 </button>
-                <button
-                    class="chat-suggestion"
-                    onclick="sendSuggestion('Какие есть голоса TTS?')"
-                >
-                    &#x1F3B5; TTS голоса
+                <button class="chat-suggestion" onclick="sendSuggestion('Какие есть голоса TTS?')">
+                    {{ icon('music', 13) }} TTS голоса
                 </button>
-                <button
-                    class="chat-suggestion"
-                    onclick="sendSuggestion('Бесплатно ли JARVIS?')"
-                >
-                    &#x1F4B0; Бесплатно?
+                <button class="chat-suggestion" onclick="sendSuggestion('Бесплатно ли JARVIS?')">
+                    {{ icon('star', 13) }} Бесплатно?
                 </button>
             </div>
 

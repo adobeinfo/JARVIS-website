@@ -58,6 +58,19 @@ button { font: inherit; cursor: pointer; }
 ul { list-style: none; padding: 0; margin: 0; }
 h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
 
+/* SVG-иконки (используются macros в шаблонах) */
+.ico {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: -0.16em;
+}
+.ico-lg { vertical-align: -0.25em; }
+.ico-success { color: var(--success); }
+.ico-warn    { color: var(--gold); }
+.ico-danger  { color: var(--danger); }
+.ico-accent  { color: var(--accent); }
+.ico-muted   { color: var(--text-3); }
+
 /* ─── Background ambient blobs (glassmorphism mood) ──── */
 body::before, body::after {
     content: "";
@@ -310,6 +323,15 @@ body.has-ann .download-hero { padding-top: calc(var(--ann-pad, 0px) + 0px); }
 .nav-links a.active {
     color: var(--text);
     background: var(--glass-hi);
+}
+.nav-links a.nav-game {
+    background: linear-gradient(135deg, rgba(106,163,255,0.18), rgba(177,140,255,0.18));
+    border: 1px solid rgba(106,163,255,0.35);
+    color: var(--text);
+    font-weight: 600;
+}
+.nav-links a.nav-game:hover {
+    background: linear-gradient(135deg, rgba(106,163,255,0.3), rgba(177,140,255,0.3));
 }
 .nav-right {
     margin-left: auto;
@@ -1120,7 +1142,111 @@ textarea.form-control { min-height: 120px; resize: vertical; }
     color: var(--text-2);
     font-size: 0.92rem;
 }
-.req-icon { font-size: 1.15rem; }
+.req-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: var(--glass);
+    border: 1px solid var(--line);
+    color: var(--text-2);
+    flex-shrink: 0;
+    margin-right: 0.6rem;
+}
+.trust-row {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+}
+.trust-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.38rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-2);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+/* ═══ TG PROMO (рекомендация канала разработчика на /download) ═══ */
+.tg-promo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.4rem;
+    padding: 1rem 1.2rem;
+    background:
+        linear-gradient(135deg, rgba(41, 182, 246, 0.12), rgba(2, 136, 209, 0.06)),
+        var(--glass-2);
+    border: 1px solid rgba(41, 182, 246, 0.28);
+    border-radius: var(--radius);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), background 0.25s var(--ease);
+    text-align: left;
+}
+.tg-promo:hover {
+    transform: translateY(-2px);
+    border-color: rgba(41, 182, 246, 0.5);
+    background:
+        linear-gradient(135deg, rgba(41, 182, 246, 0.2), rgba(2, 136, 209, 0.1)),
+        var(--glass-hi);
+}
+.tg-promo-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #29b6f6, #0288d1);
+    display: grid; place-items: center;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px -6px rgba(41, 182, 246, 0.5);
+}
+.tg-promo-icon svg { width: 22px; height: 22px; }
+.tg-promo-body { flex: 1; min-width: 0; }
+.tg-promo-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.005em;
+    margin-bottom: 0.15rem;
+}
+.tg-promo-text {
+    color: var(--text-3);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+.tg-promo-cta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(41, 182, 246, 0.18);
+    border: 1px solid rgba(41, 182, 246, 0.4);
+    color: #93d9ff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.2s;
+}
+.tg-promo:hover .tg-promo-cta { background: rgba(41, 182, 246, 0.3); }
+.tg-promo:hover .arrow { transform: translateX(2px); }
+.tg-promo .arrow { transition: transform 0.2s; }
+
+@media (max-width: 540px) {
+    .tg-promo { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+    .tg-promo-cta { align-self: stretch; justify-content: center; }
+}
 
 /* ═══ FOOTER ════════════════════════════════════════════ */
 .footer {

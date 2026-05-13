@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block title %}JARVIS V2 2.2 — AI-ассистент для Windows{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}JARVIS V2 2.2 — AI-ассистент для Windows{% endblock %}
+{% block content %}
 
 <!-- ═══ HERO ════════════════════════════════════════════════ -->
 <section class="hero">
@@ -179,7 +182,7 @@
                 </div>
                 <div class="demo-msg">
                     <div class="demo-avatar bot">J</div>
-                    <div class="demo-bubble">Готово. Таймер на 10 минут запущен — напомню, когда время выйдет ⏱<small>Edge TTS · озвучено</small></div>
+                    <div class="demo-bubble">Готово. Таймер на 10 минут запущен — напомню, когда время выйдет.<small>Edge TTS · озвучено</small></div>
                 </div>
             </div>
         </div>
@@ -196,14 +199,14 @@
         </div>
 
         <div class="cmds animate-on-scroll">
-            <div class="cmd"><div class="cmd-icon">▶</div><div class="cmd-text"><b>«Открой YouTube»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">☁</div><div class="cmd-text"><b>«Погода на завтра»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">♪</div><div class="cmd-text"><b>«Включи музыку»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">⏱</div><div class="cmd-text"><b>«Таймер на 10 минут»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">🔒</div><div class="cmd-text"><b>«Заблокируй ПК»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">📷</div><div class="cmd-text"><b>«Сделай скриншот»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">🔆</div><div class="cmd-text"><b>«Прибавь яркость»</b></div></div>
-            <div class="cmd"><div class="cmd-icon">🎙</div><div class="cmd-text"><b>«Запиши заметку»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('play', 16) }}</div><div class="cmd-text"><b>«Открой YouTube»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('cloud', 16) }}</div><div class="cmd-text"><b>«Погода на завтра»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('music', 16) }}</div><div class="cmd-text"><b>«Включи музыку»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('timer', 16) }}</div><div class="cmd-text"><b>«Таймер на 10 минут»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('lock', 16) }}</div><div class="cmd-text"><b>«Заблокируй ПК»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('camera', 16) }}</div><div class="cmd-text"><b>«Сделай скриншот»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('zap', 16) }}</div><div class="cmd-text"><b>«Прибавь яркость»</b></div></div>
+            <div class="cmd"><div class="cmd-icon">{{ icon('mic', 16) }}</div><div class="cmd-text"><b>«Запиши заметку»</b></div></div>
         </div>
     </div>
 </section>
@@ -258,7 +261,7 @@
             <h2>{{ site.cta_title }}</h2>
             <p>{{ site.cta_text }}</p>
             <div class="hero-actions" style="margin-bottom:0">
-                <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">⬇ Скачать JARVIS {{ site.download_version }}</a>
+                <a href="{{ url_for('download') }}" class="btn btn-primary btn-lg">{{ icon('download', 16) }} Скачать JARVIS {{ site.download_version }}</a>
                 <a href="{{ url_for('forum') }}" class="btn btn-secondary btn-lg">Задать вопрос</a>
             </div>
         </div>

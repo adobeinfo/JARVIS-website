@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS forum_categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
-    icon TEXT DEFAULT '💬',
+    icon TEXT DEFAULT '',
     sort_order INTEGER DEFAULT 0
 );
 
@@ -102,11 +102,24 @@ CREATE TABLE IF NOT EXISTS event_secret_unlocks (
     PRIMARY KEY (token, secret_id)
 );
 
+-- ─── Игра «Поймай орб JARVIS» ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS game_scores (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_name  TEXT NOT NULL,
+    score        INTEGER NOT NULL,
+    accuracy     INTEGER DEFAULT 0,
+    combo_max    INTEGER DEFAULT 0,
+    duration_ms  INTEGER DEFAULT 30000,
+    ip_hash      TEXT DEFAULT '',
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_visits_created ON page_visits(created_at);
 CREATE INDEX IF NOT EXISTS idx_posts_cat      ON forum_posts(category_id);
 CREATE INDEX IF NOT EXISTS idx_replies_post   ON forum_replies(post_id);
 CREATE INDEX IF NOT EXISTS idx_secrets_unlock ON event_secrets(unlock_at);
 CREATE INDEX IF NOT EXISTS idx_unlocks_token  ON event_secret_unlocks(token);
+CREATE INDEX IF NOT EXISTS idx_game_score     ON game_scores(score DESC);
 """
 
 DEFAULT_SETTINGS = {
@@ -119,7 +132,7 @@ DEFAULT_SETTINGS = {
 
     # ── Site-wide announcement banner (over navbar) ──
     "ann_enabled":        "0",
-    "ann_text":           "🎉 Вышло большое обновление JARVIS V2 2.2 — обновитесь сегодня!",
+    "ann_text":           "Вышло большое обновление JARVIS V2 2.2 — обновитесь сегодня!",
     "ann_link":           "/download",
     "ann_style":          "accent",  # accent | success | warning | danger
 
@@ -146,10 +159,25 @@ DEFAULT_SETTINGS = {
     # ── Download страница ──
     "download_version":   "V2 2.2",
     "download_subtitle":  "JARVIS AI Assistant для Windows 10/11",
+    "download_size_mb":   "147",
 
     # ── Соц.ссылки в футере ──
-    "social_telegram":    "https://t.me/Jarvis_assistant_free",
+    "social_telegram":    "https://t.me/Jarvis_free",
     "social_boosty":      "https://boosty.to/photoshop24/donate",
+
+    # ── TG-рекомендация на странице /download (не блокирует загрузку) ──
+    "gate_tg_enabled":    "0",
+    "gate_tg_channel_url": "https://t.me/Jarvis_free",
+    "gate_tg_channel_name":"@Jarvis_free",
+    "gate_tg_title":      "Канал разработчика",
+    "gate_tg_text":       "Подпишись чтобы первым узнавать о новых версиях, фичах и эксклюзивных сценариях.",
+
+    # ── Игра «Поймай орб JARVIS» ──
+    "game_enabled":       "0",
+    "game_title":         "Поймай орб JARVIS",
+    "game_subtitle":      "Реакция · 30 секунд · топ-10 на сайте",
+    "game_prize_text":    "Топ-1 на конец месяца получает уникальный бета-доступ к V3.",
+    "game_duration_ms":   "30000",
 }
 
 
@@ -176,6 +204,45 @@ def init_db():
             "INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)",
             (k, v),
         )
+
+    # Миграция: если какие-то текстовые поля случайно записаны пустой строкой,
+    # восстанавливаем дефолт (защита от затёртых ранее значений)
+    _BOOLS = {"summer_design", "event_active", "ann_enabled",
+              "gate_tg_enabled", "game_enabled"}
+    for k, v in DEFAULT_SETTINGS.items():
+        if k in _BOOLS:
+            continue
+        row = conn.execute("SELECT value FROM site_settings WHERE key=?", (k,)).fetchone()
+        if row is not None and (row["value"] is None or str(row["value"]).strip() == ""):
+            conn.execute("UPDATE site_settings SET value=? WHERE key=?", (v, k))
+
+    # Миграция: чистим эмодзи из имён категорий форума и старого ann_text
+    import re as _re
+    _emoji_re = _re.compile(r'[\U0001F300-\U0001FAFF\U00002600-\U000027BF\U00002B00-\U00002BFF]+\s*')
+    for cat in conn.execute("SELECT id, name FROM forum_categories").fetchall():
+        new = _emoji_re.sub('', cat["name"]).strip()
+        if new and new != cat["name"]:
+            conn.execute("UPDATE forum_categories SET name=? WHERE id=?", (new, cat["id"]))
+    _ann = conn.execute("SELECT value FROM site_settings WHERE key='ann_text'").fetchone()
+    if _ann and _emoji_re.search(_ann["value"] or ""):
+        conn.execute("UPDATE site_settings SET value=? WHERE key='ann_text'",
+                     (_emoji_re.sub('', _ann["value"]).strip(),))
+
+    # Миграция: обновляем устаревшие TG-ссылки на актуальный канал
+    _LEGACY_TG = (
+        "https://t.me/Jarvis_assistant_free",
+        "@Jarvis_assistant_free",
+    )
+    _NEW_TG = {
+        "https://t.me/Jarvis_assistant_free": "https://t.me/Jarvis_free",
+        "@Jarvis_assistant_free":             "@Jarvis_free",
+    }
+    for key in ("social_telegram", "gate_tg_channel_url", "gate_tg_channel_name"):
+        row = conn.execute("SELECT value FROM site_settings WHERE key=?", (key,)).fetchone()
+        if row and row["value"] in _NEW_TG:
+            conn.execute("UPDATE site_settings SET value=? WHERE key=?",
+                         (_NEW_TG[row["value"]], key))
+
     conn.commit()
     conn.close()
 
@@ -189,10 +256,10 @@ def _seed(conn):
 
     # Категории форума
     categories = [
-        ("🚀 Общее обсуждение", "Общие вопросы и разговоры о JARVIS", "🚀", 1),
-        ("🐛 Баги и проблемы", "Сообщения об ошибках и неполадках", "🐛", 2),
-        ("💡 Предложения", "Идеи по улучшению и новые функции", "💡", 3),
-        ("📦 Установка", "Помощь с установкой и настройкой", "📦", 4),
+        ("Общее обсуждение", "Общие вопросы и разговоры о JARVIS", "", 1),
+        ("Баги и проблемы", "Сообщения об ошибках и неполадках", "", 2),
+        ("Предложения", "Идеи по улучшению и новые функции", "", 3),
+        ("Установка", "Помощь с установкой и настройкой", "", 4),
     ]
     conn.executemany(
         "INSERT INTO forum_categories (name, description, icon, sort_order) VALUES (?, ?, ?, ?)",

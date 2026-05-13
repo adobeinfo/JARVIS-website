@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% from '_icons.html' import icon %}
 {% block title %}Форум — JARVIS Admin{% endblock %}
 {% block topbar %}Форум{% endblock %}
 {% block content %}
@@ -57,13 +58,13 @@
                placeholder="описание"
                style="padding:0.4rem 0.7rem;flex:2;min-width:200px;" />
         <span class="a-badge muted" title="Тем">{{ cat['post_count'] }} тем</span>
-        <button type="submit" class="a-btn a-btn-success a-btn-xs">💾 Сохранить</button>
+        <button type="submit" class="a-btn a-btn-success a-btn-xs">{{ icon('save', 12) }} Сохранить</button>
       </form>
 
       <form method="POST" action="{{ url_for('admin_forum_cat_delete', cid=cat['id']) }}"
             onsubmit="return confirm('Удалить категорию и все её темы? Это необратимо.')"
             style="flex-shrink:0;">
-        <button type="submit" class="a-btn a-btn-danger a-btn-xs">✕</button>
+        <button type="submit" class="a-btn a-btn-danger a-btn-xs">{{ icon('trash', 12) }}</button>
       </form>
     </div>
     {% endfor %}
@@ -89,7 +90,7 @@
           <th>Категория</th>
           <th>Автор</th>
           <th>Дата</th>
-          <th>👁</th>
+          <th>{{ icon('eye', 12) }}</th>
           <th>Статус</th>
           <th style="text-align:right;">Действия</th>
         </tr>
@@ -109,23 +110,23 @@
           <td style="color:var(--text-3);">{{ post['created_at'][:10] }}</td>
           <td style="color:var(--accent);font-weight:600;">{{ post['views'] }}</td>
           <td>
-            {% if post['is_pinned'] %}<span class="a-badge accent" title="Закреплено">📌</span>{% endif %}
-            {% if post['is_locked'] %}<span class="a-badge warning" title="Закрыто">🔒</span>{% endif %}
+            {% if post['is_pinned'] %}<span class="a-badge accent" title="Закреплено">{{ icon('pin', 11) }}</span>{% endif %}
+            {% if post['is_locked'] %}<span class="a-badge warning" title="Закрыто">{{ icon('lock', 11) }}</span>{% endif %}
             {% if not post['is_pinned'] and not post['is_locked'] %}<span class="a-badge muted">—</span>{% endif %}
           </td>
           <td>
             <div class="actions" style="justify-content:flex-end;">
               <form method="POST" action="{{ url_for('admin_forum_post_pin', pid=post['id']) }}">
                 <button type="submit" class="a-btn a-btn-secondary a-btn-xs"
-                        title="{% if post['is_pinned'] %}Открепить{% else %}Закрепить{% endif %}">📌</button>
+                        title="{% if post['is_pinned'] %}Открепить{% else %}Закрепить{% endif %}">{{ icon('pin', 12) }}</button>
               </form>
               <form method="POST" action="{{ url_for('admin_forum_post_lock', pid=post['id']) }}">
                 <button type="submit" class="a-btn a-btn-secondary a-btn-xs"
-                        title="{% if post['is_locked'] %}Открыть{% else %}Закрыть{% endif %}">🔒</button>
+                        title="{% if post['is_locked'] %}Открыть{% else %}Закрыть{% endif %}">{{ icon('lock', 12) }}</button>
               </form>
               <form method="POST" action="{{ url_for('admin_forum_post_delete', pid=post['id']) }}"
                     onsubmit="return confirm('Удалить тему?')">
-                <button type="submit" class="a-btn a-btn-danger a-btn-xs">✕</button>
+                <button type="submit" class="a-btn a-btn-danger a-btn-xs">{{ icon('trash', 12) }}</button>
               </form>
             </div>
           </td>

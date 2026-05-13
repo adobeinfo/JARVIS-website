@@ -1,5 +1,7 @@
-{% extends 'base.html' %} {% block title %}Новости — JARVIS{% endblock %} {%
-block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Новости — JARVIS{% endblock %}
+{% block content %}
 
 <div class="page-header">
     <div class="page-header-inner">
@@ -21,7 +23,7 @@ block content %}
                     class="news-card-img"
                 />
                 {% else %}
-                <div class="news-card-img-placeholder">📰</div>
+                <div class="news-card-img-placeholder">{{ icon('news', 36) }}</div>
                 {% endif %}
                 <div class="news-card-body">
                     <div class="news-card-meta">
@@ -48,7 +50,7 @@ block content %}
             class="text-center"
             style="padding: 4rem 0; color: var(--text-muted)"
         >
-            <div style="font-size: 3rem; margin-bottom: 1rem">📰</div>
+            <div style="margin-bottom: 1rem; color: var(--text-3);">{{ icon('news', 48) }}</div>
             <div
                 style="
                     font-family: &quot;Oswald&quot;, sans-serif;

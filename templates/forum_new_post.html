@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block title %}Новая тема — {{ category['name'] }}{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Новая тема — {{ category['name'] }}{% endblock %}
+{% block content %}
 
 <div class="page-header">
     <div class="page-header-inner">
@@ -17,7 +20,7 @@
     <div class="container">
         <div class="form-card animate-on-scroll">
             <div class="form-card-head">
-                <div class="form-card-icon">{{ category['icon'] or '✏️' }}</div>
+                <div class="form-card-icon">{% if category['icon'] %}{{ category['icon'] }}{% else %}{{ icon('edit', 18) }}{% endif %}</div>
                 <div>
                     <div class="form-card-title">Создать тему в «{{ category['name'] }}»</div>
                     <div class="form-card-subtitle">Опиши проблему или идею — сообщество поможет</div>

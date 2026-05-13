@@ -1,4 +1,7 @@
-{% extends 'base.html' %} {% block title %}Форум — JARVIS{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Форум — JARVIS{% endblock %}
+{% block content %}
 
 <div class="page-header">
     <div class="page-header-inner">
@@ -38,7 +41,7 @@
             {% for cat in categories %}
             <a href="{{ url_for('forum_category', cat_id=cat['id']) }}"
                class="forum-cat-card animate-on-scroll">
-                <div class="forum-cat-icon">{{ cat['icon'] or '💬' }}</div>
+                <div class="forum-cat-icon">{% if cat['icon'] %}{{ cat['icon'] }}{% else %}{{ icon('forum', 22) }}{% endif %}</div>
                 <div class="forum-cat-info">
                     <div class="forum-cat-name">{{ cat['name'] }}</div>
                     <div class="forum-cat-desc">{{ cat['description'] }}</div>
@@ -51,7 +54,7 @@
             </a>
             {% else %}
             <div class="empty-state animate-on-scroll">
-                <div class="empty-state-icon">💬</div>
+                <div class="empty-state-icon">{{ icon('forum', 28) }}</div>
                 <div class="empty-state-title">Категорий пока нет</div>
                 <div class="empty-state-desc">Скоро здесь появятся разделы для обсуждений.</div>
             </div>
