@@ -588,6 +588,16 @@
      class="a-nav-item {% if 'admin_game' in (request.endpoint or '') %}active{% endif %}">
     <span class="a-nav-icon">{{ icon('gamepad', 16) }}</span> Игра · скоры
   </a>
+  <a href="{{ url_for('admin_blast') }}"
+     class="a-nav-item {% if 'admin_blast' in (request.endpoint or '') %}active{% endif %}">
+    <span class="a-nav-icon">{{ icon('sparkles', 16) }}</span> Block Blast
+  </a>
+
+  <div class="a-section">Аналитика</div>
+  <a href="{{ url_for('admin_visitors') }}"
+     class="a-nav-item {% if request.endpoint == 'admin_visitors' %}active{% endif %}">
+    <span class="a-nav-icon">{{ icon('globe', 16) }}</span> Посетители · IP
+  </a>
 
   <div class="a-spacer"></div>
 

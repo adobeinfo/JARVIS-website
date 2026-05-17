@@ -105,24 +105,111 @@ def close_db(_):
 
 SKIP_TRACK_PREFIXES = ("/static", "/admin", "/api", "/favicon")
 
+
+def _client_ip():
+    """Возвращает «настоящий» IP клиента — учитывает X-Forwarded-For."""
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        # за прокси (Railway/CF) — берём первый
+        return xff.split(",")[0].strip()
+    return request.remote_addr or ""
+
+
 @app.before_request
 def track_visit():
     path = request.path
     if any(path.startswith(p) for p in SKIP_TRACK_PREFIXES):
         return
     try:
-        import hashlib
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+        ip = _client_ip()
         ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
         referrer = (request.referrer or "")[:200]
+        ua = (request.headers.get("User-Agent") or "")[:300]
         db = get_conn()
         db.execute(
-            "INSERT INTO page_visits (path, ip_hash, referrer) VALUES (?, ?, ?)",
-            (path, ip_hash, referrer)
+            "INSERT INTO page_visits (path, ip_hash, ip, user_agent, referrer) VALUES (?, ?, ?, ?, ?)",
+            (path, ip_hash, ip, ua, referrer)
         )
         db.commit()
     except Exception:
         pass
+
+
+# ═══ Geolocation cache (ip-api.com) ════════════════════════════════════════════
+
+def _is_private_ip(ip):
+    """Простой фильтр private-сетей и localhost."""
+    if not ip or ":" in ip and ip.count(":") < 2:
+        return True
+    if ip.startswith(("10.", "127.", "192.168.", "172.16.", "172.17.", "172.18.",
+                      "172.19.", "172.2", "172.30.", "172.31.", "169.254.", "::1", "fe80:")):
+        return True
+    return False
+
+
+def _geo_lookup(ip):
+    """Получает геоданные с ip-api.com и кэширует в БД. Возвращает dict или None."""
+    if _is_private_ip(ip):
+        return None
+    db = get_conn()
+    row = db.execute("SELECT * FROM ip_geo WHERE ip=?", (ip,)).fetchone()
+    if row and row["status"] == "success":
+        return dict(row)
+    if row and row["status"] == "fail":
+        return None
+    try:
+        import requests
+        r = requests.get(
+            f"http://ip-api.com/json/{ip}"
+            "?fields=status,country,countryCode,regionName,city,lat,lon,isp,query",
+            timeout=4,
+        )
+        data = r.json() if r.status_code == 200 else {}
+    except Exception:
+        data = {}
+    status = data.get("status", "fail")
+    db.execute(
+        "INSERT INTO ip_geo (ip, country, country_code, region, city, lat, lon, isp, status) "
+        "VALUES (?,?,?,?,?,?,?,?,?) "
+        "ON CONFLICT(ip) DO UPDATE SET country=excluded.country, country_code=excluded.country_code, "
+        "region=excluded.region, city=excluded.city, lat=excluded.lat, lon=excluded.lon, "
+        "isp=excluded.isp, status=excluded.status, updated_at=CURRENT_TIMESTAMP",
+        (
+            ip, data.get("country", ""), data.get("countryCode", ""),
+            data.get("regionName", ""), data.get("city", ""),
+            float(data.get("lat") or 0), float(data.get("lon") or 0),
+            data.get("isp", ""), status,
+        ),
+    )
+    db.commit()
+    if status != "success":
+        return None
+    return {
+        "ip": ip, "country": data.get("country", ""),
+        "country_code": data.get("countryCode", ""),
+        "region": data.get("regionName", ""), "city": data.get("city", ""),
+        "lat": float(data.get("lat") or 0), "lon": float(data.get("lon") or 0),
+        "isp": data.get("isp", ""), "status": status,
+    }
+
+
+def _bulk_resolve_geo(ips, limit=80):
+    """Подтягивает геоданные для списка IP. Для отсутствующих в кэше — резолвит
+    (но не более `limit` обращений за раз, чтобы не упереться в лимит API)."""
+    db = get_conn()
+    if not ips:
+        return {}
+    placeholders = ",".join("?" * len(ips))
+    rows = db.execute(
+        f"SELECT * FROM ip_geo WHERE ip IN ({placeholders})", list(ips)
+    ).fetchall()
+    cache = {r["ip"]: dict(r) for r in rows}
+    missing = [ip for ip in ips if ip and ip not in cache and not _is_private_ip(ip)]
+    for ip in missing[:limit]:
+        g = _geo_lookup(ip)
+        if g:
+            cache[ip] = g
+    return cache
 
 
 def admin_required(f):
@@ -158,7 +245,8 @@ def _hash_ip():
 
 
 _BOOL_SETTING_KEYS_BASE = {"summer_design", "event_active",
-                           "ann_enabled", "gate_tg_enabled", "game_enabled"}
+                           "ann_enabled", "gate_tg_enabled",
+                           "game_enabled", "blast_enabled"}
 
 
 def _site_settings_dict():
@@ -188,6 +276,7 @@ def inject_globals():
     s["ann_enabled_bool"]   = (s.get("ann_enabled",   "0") == "1")
     s["gate_tg_enabled_bool"] = (s.get("gate_tg_enabled", "0") == "1")
     s["game_enabled_bool"]  = (s.get("game_enabled",  "0") == "1")
+    s["blast_enabled_bool"] = (s.get("blast_enabled", "0") == "1")
     return {
         "site":           s,
         "summer_design":  s["summer_design_bool"],
@@ -274,11 +363,14 @@ def download():
 def download_file():
     # Трекинг скачивания
     try:
-        import hashlib
-        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+        ip = _client_ip()
         ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+        ua = (request.headers.get("User-Agent") or "")[:300]
         db = get_conn()
-        db.execute("INSERT INTO downloads (ip_hash) VALUES (?)", (ip_hash,))
+        db.execute(
+            "INSERT INTO downloads (ip_hash, ip, user_agent) VALUES (?, ?, ?)",
+            (ip_hash, ip, ua),
+        )
         db.commit()
     except Exception:
         pass
@@ -1040,10 +1132,12 @@ SITE_CONTENT_KEYS = [
     "gate_tg_title", "gate_tg_text",
     # Game
     "game_enabled", "game_title", "game_subtitle", "game_prize_text", "game_duration_ms",
+    # Blast
+    "blast_enabled", "blast_title", "blast_subtitle", "blast_prize_text",
 ]
 
 
-_BOOL_SETTING_KEYS = {"ann_enabled", "gate_tg_enabled", "game_enabled"}
+_BOOL_SETTING_KEYS = {"ann_enabled", "gate_tg_enabled", "game_enabled", "blast_enabled"}
 
 
 @app.route("/admin/site", methods=["GET", "POST"])
@@ -1183,6 +1277,302 @@ def admin_game_score_delete(sid):
     db.commit()
     flash("Результат удалён.", "info")
     return redirect(url_for("admin_game"))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ИГРА «JARVIS Block Blast»
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _blast_leaderboard_rows(limit=15):
+    """Агрегированный лидерборд: одна строка на игрока (ip_hash).
+    Суммируем все его раунды, имя — последнее выбранное игроком."""
+    db = get_conn()
+    return db.execute(
+        """
+        SELECT
+            (SELECT bs2.player_name FROM blast_scores bs2
+                WHERE bs2.ip_hash = bs.ip_hash
+                ORDER BY bs2.created_at DESC LIMIT 1) AS player_name,
+            SUM(bs.score)                            AS score,
+            SUM(bs.lines)                            AS lines,
+            MAX(bs.combo_max)                        AS combo_max,
+            SUM(bs.moves)                            AS moves,
+            COUNT(*)                                 AS rounds,
+            MAX(bs.created_at)                       AS created_at,
+            bs.ip_hash                               AS ip_hash
+        FROM blast_scores bs
+        GROUP BY bs.ip_hash
+        ORDER BY score DESC, created_at ASC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def _blast_player_name(ip_hash):
+    """Возвращает последний выбранный игроком ник, либо None."""
+    db = get_conn()
+    row = db.execute(
+        "SELECT player_name FROM blast_scores WHERE ip_hash=? "
+        "ORDER BY created_at DESC LIMIT 1",
+        (ip_hash,),
+    ).fetchone()
+    return row["player_name"] if row else None
+
+
+@app.route("/blast")
+def blast_page():
+    if get_setting("blast_enabled", "0") != "1":
+        flash("Block Blast сейчас выключен. Загляни позже!", "info")
+        return redirect(url_for("index"))
+    db = get_conn()
+    top_scores = _blast_leaderboard_rows(15)
+    total_plays = db.execute("SELECT COUNT(*) FROM blast_scores").fetchone()[0]
+    # «Рекорд» = лучшая суммарная карма одного игрока
+    best_total = db.execute(
+        "SELECT MAX(t) FROM (SELECT SUM(score) AS t FROM blast_scores GROUP BY ip_hash)"
+    ).fetchone()[0] or 0
+    unique = db.execute("SELECT COUNT(DISTINCT ip_hash) FROM blast_scores").fetchone()[0]
+
+    # Зафиксированный ник текущего игрока (если уже играл)
+    ip = _client_ip()
+    ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+    locked_name = _blast_player_name(ip_hash) or ""
+
+    return render_template("blast.html",
+                           top_scores=top_scores,
+                           total_plays=total_plays,
+                           best_score=best_total,
+                           unique_players=unique,
+                           locked_name=locked_name)
+
+
+@app.route("/api/blast/leaderboard")
+def api_blast_leaderboard():
+    rows = _blast_leaderboard_rows(15)
+    return jsonify({"top": [dict(r) for r in rows]})
+
+
+@app.route("/api/blast/me")
+def api_blast_me():
+    """Имя, закреплённое за текущим IP (если игрок уже отправлял результаты)."""
+    ip = _client_ip()
+    ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+    return jsonify({"name": _blast_player_name(ip_hash) or ""})
+
+
+@app.route("/api/blast/score", methods=["POST"])
+def api_blast_score():
+    if get_setting("blast_enabled", "0") != "1":
+        return jsonify({"ok": False, "error": "off"}), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        score    = int(data.get("score", 0))
+        lines    = int(data.get("lines", 0))
+        combo    = int(data.get("combo_max", 0))
+        moves    = int(data.get("moves", 0))
+        duration = int(data.get("duration_ms", 0))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "bad_payload"}), 400
+
+    raw_name = (data.get("name") or "").strip()[:40] or "Аноним"
+    if score < 0 or score > 5_000_000:
+        return jsonify({"ok": False, "error": "bad_score"}), 400
+    if moves < 0 or moves > 100_000:
+        return jsonify({"ok": False, "error": "bad_moves"}), 400
+    if moves > 0 and score / max(moves, 1) > 500:
+        return jsonify({"ok": False, "error": "suspicious"}), 400
+
+    ip = _client_ip()
+    ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+    db = get_conn()
+
+    # Пользователь свободно выбирает ник; раунды всё равно агрегируются по IP,
+    # так что новый «игрок» не создаётся.
+    name = raw_name
+
+    last = db.execute(
+        "SELECT created_at FROM blast_scores WHERE ip_hash=? "
+        "ORDER BY created_at DESC LIMIT 1", (ip_hash,)
+    ).fetchone()
+    if last:
+        prev = _dt.datetime.strptime(last["created_at"], "%Y-%m-%d %H:%M:%S")
+        if (_dt.datetime.utcnow() - prev).total_seconds() < 5:
+            return jsonify({"ok": False, "error": "too_fast"}), 429
+
+    db.execute(
+        "INSERT INTO blast_scores "
+        "(player_name, score, lines, combo_max, moves, duration_ms, ip_hash, ip) "
+        "VALUES (?,?,?,?,?,?,?,?)",
+        (name, score, lines, combo, moves, duration, ip_hash, ip),
+    )
+    db.commit()
+
+    # Считаем суммарный счёт игрока и его место в лидерборде по сумме
+    total = db.execute(
+        "SELECT SUM(score) FROM blast_scores WHERE ip_hash=?", (ip_hash,)
+    ).fetchone()[0] or 0
+    rank = db.execute(
+        "SELECT COUNT(*)+1 FROM "
+        "(SELECT SUM(score) AS s FROM blast_scores GROUP BY ip_hash HAVING s > ?)",
+        (total,),
+    ).fetchone()[0]
+
+    return jsonify({"ok": True, "rank": rank, "total": total, "name": name})
+
+
+# ── Admin: Block Blast ────────────────────────────────────────────────────────
+
+@app.route("/admin/blast")
+@admin_required
+def admin_blast():
+    db = get_conn()
+    scores = db.execute(
+        "SELECT * FROM blast_scores ORDER BY score DESC, created_at ASC LIMIT 200"
+    ).fetchall()
+    total  = db.execute("SELECT COUNT(*) FROM blast_scores").fetchone()[0]
+    unique = db.execute("SELECT COUNT(DISTINCT ip_hash) FROM blast_scores").fetchone()[0]
+    best   = db.execute("SELECT MAX(score) FROM blast_scores").fetchone()[0] or 0
+    return render_template("admin/blast.html",
+                           scores=scores, total=total, unique=unique, best=best)
+
+
+@app.route("/admin/blast/clear", methods=["POST"])
+@admin_required
+def admin_blast_clear():
+    db = get_conn()
+    db.execute("DELETE FROM blast_scores")
+    db.commit()
+    flash("Все результаты Block Blast удалены.", "info")
+    return redirect(url_for("admin_blast"))
+
+
+@app.route("/admin/blast/<int:sid>/delete", methods=["POST"])
+@admin_required
+def admin_blast_delete(sid):
+    db = get_conn()
+    db.execute("DELETE FROM blast_scores WHERE id=?", (sid,))
+    db.commit()
+    flash("Результат удалён.", "info")
+    return redirect(url_for("admin_blast"))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ADMIN: Посетители (IP + интерактивная карта)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/admin/visitors")
+@admin_required
+def admin_visitors():
+    return render_template("admin/visitors.html")
+
+
+def _format_ua(ua):
+    """Короткое название браузера/ОС из UA-строки."""
+    if not ua:
+        return ""
+    s = ua
+    out = []
+    for k, v in (("Edg/", "Edge"), ("OPR/", "Opera"), ("Chrome/", "Chrome"),
+                 ("Firefox/", "Firefox"), ("Safari/", "Safari")):
+        if k in s:
+            out.append(v); break
+    for k, v in (("Windows NT 10", "Win10/11"), ("Windows NT", "Windows"),
+                 ("Mac OS X", "macOS"), ("Android", "Android"),
+                 ("iPhone", "iOS"), ("Linux", "Linux")):
+        if k in s:
+            out.append(v); break
+    return " · ".join(out) if out else (ua[:30] + "…" if len(ua) > 30 else ua)
+
+
+@app.route("/api/admin/visitors")
+@admin_required
+def api_admin_visitors():
+    """Возвращает агрегированные данные по IP — для таблицы и карты."""
+    days = max(1, min(90, int(request.args.get("days", 30))))
+    db = get_conn()
+
+    # Сводка по IP (визиты + скачивания)
+    rows = db.execute(
+        f"""
+        WITH v AS (
+            SELECT ip,
+                   COUNT(*)            AS visits,
+                   MAX(created_at)     AS last_visit,
+                   MIN(created_at)     AS first_visit,
+                   MAX(user_agent)     AS user_agent
+            FROM page_visits
+            WHERE ip != '' AND created_at >= datetime('now', '-{days} days')
+            GROUP BY ip
+        ),
+        d AS (
+            SELECT ip,
+                   COUNT(*)            AS downloads,
+                   MAX(created_at)     AS last_download
+            FROM downloads
+            WHERE ip != '' AND created_at >= datetime('now', '-{days} days')
+            GROUP BY ip
+        )
+        SELECT * FROM (
+            SELECT COALESCE(v.ip, d.ip)                AS ip,
+                   COALESCE(v.visits, 0)               AS visits,
+                   COALESCE(d.downloads, 0)            AS downloads,
+                   COALESCE(v.last_visit, d.last_download) AS last_seen,
+                   v.first_visit                       AS first_visit,
+                   v.user_agent                        AS user_agent
+            FROM v LEFT JOIN d ON v.ip = d.ip
+            UNION
+            SELECT d.ip, 0, d.downloads, d.last_download, NULL, NULL
+            FROM d LEFT JOIN v ON v.ip = d.ip
+            WHERE v.ip IS NULL
+        )
+        ORDER BY (visits + downloads*5) DESC
+        LIMIT 500
+        """
+    ).fetchall()
+
+    ips = [r["ip"] for r in rows]
+    geo = _bulk_resolve_geo(ips, limit=50)
+
+    items = []
+    for r in rows:
+        g = geo.get(r["ip"]) or {}
+        items.append({
+            "ip":          r["ip"],
+            "visits":      r["visits"],
+            "downloads":   r["downloads"],
+            "last_seen":   r["last_seen"],
+            "first_visit": r["first_visit"],
+            "ua":          _format_ua(r["user_agent"] or ""),
+            "country":     g.get("country", ""),
+            "country_code": g.get("country_code", ""),
+            "city":        g.get("city", ""),
+            "region":      g.get("region", ""),
+            "isp":         g.get("isp", ""),
+            "lat":         g.get("lat") or 0,
+            "lon":         g.get("lon") or 0,
+        })
+
+    # Сводка по странам (для карты-хороплет)
+    country_agg = {}
+    for it in items:
+        cc = it["country_code"]
+        if not cc:
+            continue
+        c = country_agg.setdefault(cc, {
+            "country": it["country"], "country_code": cc,
+            "visits": 0, "downloads": 0, "ips": 0,
+        })
+        c["visits"]    += it["visits"]
+        c["downloads"] += it["downloads"]
+        c["ips"]       += 1
+
+    return jsonify({
+        "days": days,
+        "total_ips": len(items),
+        "items": items,
+        "countries": list(country_agg.values()),
+    })
 
 
 # ─── 404 ───────────────────────────────────────────────────────────────────────

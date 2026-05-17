@@ -1,0 +1,440 @@
+{% extends 'admin/base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Посетители · IP & карта — JARVIS Admin{% endblock %}
+{% block topbar %}Посетители · IP & карта{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+    .v-toolbar{
+        display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;
+        margin-bottom:1.2rem;
+    }
+    .v-toolbar .a-input{width:auto;min-width:220px}
+    .v-toolbar .seg{display:inline-flex;background:var(--glass);border:1px solid var(--line-2);
+        border-radius:999px;padding:3px;gap:2px}
+    .v-toolbar .seg button{
+        padding:.35rem .85rem;border-radius:999px;font-size:.78rem;font-weight:600;
+        color:var(--text-3);transition:all .2s var(--ease);
+    }
+    .v-toolbar .seg button.active{background:var(--glass-hi);color:var(--text);
+        box-shadow:inset 0 0 0 1px var(--line-2)}
+    .v-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:1.2rem;margin-bottom:1.2rem}
+    @media(max-width:1100px){.v-grid{grid-template-columns:1fr}}
+
+    #vMap{height:520px;border-radius:var(--r-lg);overflow:hidden;
+        border:1px solid var(--line);background:#0a0f1c}
+    /* Лёгкое затемнение тайлов без инверсии цветов — никаких артефактов. */
+    #vMap .leaflet-tile-pane{
+        filter:brightness(.62) contrast(1.05) saturate(.72);
+    }
+    /* Маркеры, попапы и контролы — без фильтров, видимы поверх тёмной карты. */
+    #vMap .leaflet-marker-pane,
+    #vMap .leaflet-popup-pane,
+    #vMap .leaflet-control-container,
+    #vMap .leaflet-shadow-pane{filter:none}
+    .leaflet-popup-content-wrapper{
+        background:rgba(15,17,26,.95);color:var(--text);
+        border:1px solid var(--line-2);border-radius:12px;
+        box-shadow:0 14px 30px -10px rgba(0,0,0,.6);
+    }
+    .leaflet-popup-tip{background:rgba(15,17,26,.95);border:1px solid var(--line-2)}
+    .leaflet-container{background:#06070d;font-family:var(--font)}
+    .leaflet-control-attribution{background:rgba(0,0,0,.4)!important;color:var(--text-3)!important}
+    .leaflet-control-attribution a{color:var(--text-2)!important}
+
+    /* Маркер: яркий солидный круг + двойной glow + пульсирующее кольцо */
+    .v-pulse{
+        position:relative;border-radius:50%;
+        background:#7cf2ff;
+        border:2px solid #ffffff;
+        box-shadow:
+            0 0 0 2px rgba(124,242,255,.35),
+            0 0 14px 4px rgba(124,242,255,.55),
+            0 0 26px 8px rgba(124,242,255,.25);
+    }
+    .v-pulse::after{
+        content:"";position:absolute;inset:-8px;border-radius:50%;
+        border:2px solid rgba(124,242,255,.7);
+        animation:vp 1.8s cubic-bezier(.22,1,.36,1) infinite;
+    }
+    .v-pulse.dl{
+        background:#f4c87a;
+        box-shadow:
+            0 0 0 2px rgba(244,200,122,.35),
+            0 0 14px 4px rgba(244,200,122,.65),
+            0 0 26px 8px rgba(244,200,122,.3);
+    }
+    .v-pulse.dl::after{border-color:rgba(244,200,122,.75)}
+    @keyframes vp{
+        0%{transform:scale(.6);opacity:.95}
+        100%{transform:scale(2.8);opacity:0}
+    }
+
+    .v-summary{
+        display:flex;flex-direction:column;gap:.6rem;
+        max-height:520px;overflow-y:auto;padding-right:.3rem;
+    }
+    .v-cgroup{
+        display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;
+        background:rgba(255,255,255,.025);border:1px solid var(--line);
+        border-radius:12px;transition:background .2s,transform .2s;
+    }
+    .v-cgroup:hover{background:rgba(255,255,255,.05);transform:translateX(2px)}
+    .v-flag{
+        width:34px;height:24px;border-radius:5px;flex-shrink:0;
+        background:linear-gradient(135deg,#1c2238,#0d1020);
+        display:grid;place-items:center;font-size:.95rem;
+        border:1px solid var(--line-2);
+        font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif;
+    }
+    .v-cgroup .v-name{font-weight:600;font-size:.92rem}
+    .v-cgroup .v-mini{font-size:.7rem;color:var(--text-3);margin-top:1px}
+    .v-cgroup .v-num{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;
+        background:linear-gradient(135deg,#7cf2ff,#b18cff);
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+    .v-ip{
+        font-family:var(--font-mono);font-size:.84rem;color:var(--text);
+        background:rgba(0,0,0,.3);padding:.15rem .5rem;border-radius:6px;
+        border:1px solid var(--line);display:inline-block;
+    }
+    .v-meta-row{font-size:.72rem;color:var(--text-3);margin-top:3px}
+    .v-loc{display:inline-flex;align-items:center;gap:.35rem}
+    .v-loc .flag{width:18px;height:13px;border-radius:3px;border:1px solid var(--line-2);
+        background:linear-gradient(135deg,#1c2238,#0d1020);display:inline-grid;place-items:center;font-size:.7rem;
+        font-family:"Apple Color Emoji","Segoe UI Emoji",sans-serif}
+
+    .v-loading{
+        text-align:center;padding:3rem 1rem;color:var(--text-3);font-size:.9rem;
+    }
+    .v-loading::before{
+        content:"";display:inline-block;width:24px;height:24px;margin-bottom:.6rem;
+        border:2px solid var(--line-2);border-top-color:var(--accent);border-radius:50%;
+        animation:vspin 1s linear infinite;vertical-align:middle;margin-right:.5rem;
+    }
+    @keyframes vspin{to{transform:rotate(360deg)}}
+
+    .v-empty{text-align:center;padding:3rem 1rem;color:var(--text-3);font-size:.9rem}
+
+    /* table */
+    .v-table-wrap{max-height:640px;overflow-y:auto}
+    .v-pill{
+        display:inline-block;padding:.1rem .45rem;border-radius:6px;font-size:.7rem;
+        font-weight:600;font-variant-numeric:tabular-nums;
+    }
+    .v-pill.visits{background:rgba(106,163,255,.12);color:#9bc1ff;border:1px solid rgba(106,163,255,.3)}
+    .v-pill.dl{background:rgba(244,200,122,.12);color:#f4c87a;border:1px solid rgba(244,200,122,.3)}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="a-page-head">
+    <div>
+        <h2>Посетители</h2>
+        <div class="desc">IP, страны, скачивания и интерактивная карта посещений.</div>
+    </div>
+    <div class="actions">
+        <a href="{{ url_for('admin_dashboard') }}" class="a-btn a-btn-secondary a-btn-sm">{{ icon('chart', 14) }} Дашборд</a>
+    </div>
+</div>
+
+<div class="v-toolbar">
+    <div class="seg" id="vRange">
+        <button data-d="1">24ч</button>
+        <button data-d="7">7д</button>
+        <button data-d="30" class="active">30д</button>
+        <button data-d="90">90д</button>
+    </div>
+    <input id="vSearch" class="a-input" placeholder="Поиск: IP, страна, город, ISP…">
+    <div style="flex:1"></div>
+    <button class="a-btn a-btn-secondary a-btn-sm" id="vRefresh">{{ icon('refresh', 13) }} Обновить</button>
+</div>
+
+<div class="a-stat-grid" id="vStats">
+    <div class="a-stat">
+        <div class="a-stat-icon">{{ icon('globe', 18, 'ico-accent') }}</div>
+        <div class="a-stat-num" id="vsIps">—</div>
+        <div class="a-stat-label">Уникальных IP</div>
+    </div>
+    <div class="a-stat alt-2">
+        <div class="a-stat-icon">{{ icon('eye', 18, 'ico-success') }}</div>
+        <div class="a-stat-num" id="vsVisits">—</div>
+        <div class="a-stat-label">Визиты</div>
+    </div>
+    <div class="a-stat alt-3">
+        <div class="a-stat-icon">{{ icon('download', 18, 'ico-warn') }}</div>
+        <div class="a-stat-num" id="vsDl">—</div>
+        <div class="a-stat-label">Скачивания</div>
+    </div>
+    <div class="a-stat alt-1">
+        <div class="a-stat-icon">{{ icon('flag', 18, 'ico-accent') }}</div>
+        <div class="a-stat-num" id="vsCountries">—</div>
+        <div class="a-stat-label">Стран</div>
+    </div>
+</div>
+
+<div class="v-grid">
+    <div class="a-card" style="padding:0;overflow:hidden">
+        <div style="padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;
+                    border-bottom:1px solid var(--line)">
+            <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem">
+                {{ icon('globe', 16) }} Интерактивная карта
+            </div>
+            <div style="display:flex;gap:.4rem;font-size:.72rem;color:var(--text-3);align-items:center">
+                <span style="display:inline-flex;align-items:center;gap:.3rem">
+                    <span style="width:10px;height:10px;border-radius:50%;background:#7cf2ff;box-shadow:0 0 8px #7cf2ff"></span> визит
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:.3rem">
+                    <span style="width:10px;height:10px;border-radius:50%;background:#f4c87a;box-shadow:0 0 8px #f4c87a"></span> скачивание
+                </span>
+            </div>
+        </div>
+        <div id="vMap"></div>
+    </div>
+
+    <div class="a-card">
+        <div class="a-card-head">
+            <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem">
+                {{ icon('flag', 16) }} По странам
+            </div>
+        </div>
+        <div id="vCountries" class="v-summary">
+            <div class="v-loading">Загружаем геоданные…</div>
+        </div>
+    </div>
+</div>
+
+<div class="a-card-title" style="margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem">
+    {{ icon('users', 14) }} Все IP <span style="color:var(--text-4)" id="vCount"></span>
+</div>
+
+<div class="a-table-wrap v-table-wrap">
+    <table class="a-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>IP</th>
+                <th>Локация</th>
+                <th>Провайдер</th>
+                <th>Браузер / ОС</th>
+                <th style="text-align:right">Визиты</th>
+                <th style="text-align:right">Скач.</th>
+                <th>Последняя активность</th>
+            </tr>
+        </thead>
+        <tbody id="vTBody">
+            <tr><td colspan="8" class="v-loading">Загрузка списка…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(() => {
+const map = L.map('vMap', {
+    // Центр — Россия (~Самара). Чуть глубже зум — лучше виден основной регион.
+    center: [55.0, 60.0], zoom: 3, worldCopyJump: true, attributionControl: true,
+    zoomControl: true, minZoom: 2,
+});
+// Яндекс.Карты — показывают границы РФ согласно официальной российской позиции
+// (Крым отображается как часть России). Применяем CSS-инверсию для тёмной темы.
+L.tileLayer(
+    'https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',
+    {
+        attribution: '© Яндекс.Карты',
+        maxZoom: 19,
+    }
+).addTo(map);
+
+const markersLayer = L.layerGroup().addTo(map);
+
+function flagEmoji(cc){
+    if (!cc || cc.length !== 2) return '🌐';
+    const A = 0x1F1E6, base = 'A'.charCodeAt(0);
+    return String.fromCodePoint(A + cc.charCodeAt(0) - base) +
+           String.fromCodePoint(A + cc.charCodeAt(1) - base);
+}
+function fmtTime(ts){
+    if (!ts) return '';
+    return ts.replace('T', ' ').slice(0, 16);
+}
+function escapeHtml(s){
+    return String(s||'').replace(/[<>&"]/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[ch]));
+}
+
+let currentRange = 30;
+let allItems = [];
+
+async function load(){
+    const tbody = document.getElementById('vTBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="v-loading">Загрузка списка…</td></tr>';
+    document.getElementById('vCountries').innerHTML = '<div class="v-loading">Загружаем геоданные…</div>';
+    try {
+        const r = await fetch('/api/admin/visitors?days=' + currentRange);
+        const data = await r.json();
+        allItems = data.items || [];
+        renderStats(data);
+        renderCountries(data.countries || []);
+        renderTable();
+        renderMap();
+    } catch(e){
+        tbody.innerHTML = '<tr><td colspan="8" class="v-empty">Ошибка загрузки данных</td></tr>';
+    }
+}
+
+function renderStats(data){
+    const totalVisits = data.items.reduce((s,i)=>s+(i.visits||0),0);
+    const totalDl     = data.items.reduce((s,i)=>s+(i.downloads||0),0);
+    document.getElementById('vsIps').textContent       = data.total_ips;
+    document.getElementById('vsVisits').textContent    = totalVisits;
+    document.getElementById('vsDl').textContent        = totalDl;
+    document.getElementById('vsCountries').textContent = (data.countries||[]).length;
+}
+
+function renderCountries(list){
+    // Скрываем UA из агрегированной сводки.
+    list = list.filter(c => c.country_code !== 'UA');
+    list.sort((a,b) => (b.visits + b.downloads*3) - (a.visits + a.downloads*3));
+    const el = document.getElementById('vCountries');
+    if (!list.length){
+        el.innerHTML = '<div class="v-empty">Нет данных по странам.<br><small>IP пока локальные или ip-api.com недоступен.</small></div>';
+        return;
+    }
+    el.innerHTML = '';
+    list.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'v-cgroup';
+        row.innerHTML = `
+            <div class="v-flag">${flagEmoji(c.country_code)}</div>
+            <div style="flex:1;min-width:0">
+                <div class="v-name">${escapeHtml(c.country || c.country_code)}</div>
+                <div class="v-mini">${c.ips} IP · ${c.visits} визитов · ${c.downloads} скач.</div>
+            </div>
+            <div class="v-num">${c.visits + c.downloads*5}</div>`;
+        el.appendChild(row);
+    });
+}
+
+function renderTable(){
+    const q = (document.getElementById('vSearch').value || '').trim().toLowerCase();
+    const items = allItems.filter(it => {
+        if (!q) return true;
+        return [it.ip, it.country, it.city, it.region, it.isp]
+            .some(x => (x||'').toLowerCase().includes(q));
+    });
+    document.getElementById('vCount').textContent = items.length ? `· ${items.length}` : '';
+    const tbody = document.getElementById('vTBody');
+    if (!items.length){
+        tbody.innerHTML = '<tr><td colspan="8" class="v-empty">Ничего не найдено.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = '';
+    items.forEach((it, i) => {
+        const tr = document.createElement('tr');
+        const loc = it.country
+            ? `<span class="v-loc"><span class="flag">${flagEmoji(it.country_code)}</span>
+                 ${escapeHtml(it.city ? it.city + ', ' : '')}${escapeHtml(it.country)}</span>`
+            : '<span style="color:var(--text-4)">—</span>';
+        tr.innerHTML = `
+            <td style="color:var(--text-3);font-variant-numeric:tabular-nums;">${i+1}</td>
+            <td><span class="v-ip">${escapeHtml(it.ip)}</span></td>
+            <td>${loc}</td>
+            <td style="color:var(--text-2);font-size:.82rem">${escapeHtml(it.isp || '—')}</td>
+            <td style="color:var(--text-3);font-size:.78rem">${escapeHtml(it.ua || '—')}</td>
+            <td style="text-align:right"><span class="v-pill visits">${it.visits}</span></td>
+            <td style="text-align:right">${it.downloads ? `<span class="v-pill dl">${it.downloads}</span>` : '<span style="color:var(--text-4)">·</span>'}</td>
+            <td style="color:var(--text-3);font-size:.78rem;font-variant-numeric:tabular-nums">${fmtTime(it.last_seen)}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderMap(){
+    markersLayer.clearLayers();
+    // На карту не выводим записи без координат и записи из UA (по запросу).
+    const located = allItems.filter(it => (it.lat || it.lon) && it.country_code !== 'UA');
+    if (!located.length) return;
+
+    // группируем по координатам (1 десятичный знак)
+    const buckets = new Map();
+    located.forEach(it => {
+        const key = `${it.lat.toFixed(1)}_${it.lon.toFixed(1)}`;
+        if (!buckets.has(key)){
+            buckets.set(key, {
+                lat: it.lat, lon: it.lon, visits: 0, downloads: 0,
+                items: [],
+            });
+        }
+        const b = buckets.get(key);
+        b.visits    += it.visits;
+        b.downloads += it.downloads;
+        b.items.push(it);
+    });
+
+    buckets.forEach(b => {
+        const isDl = b.downloads > 0;
+        const total = b.visits + b.downloads;
+        // более крупные и заметные метки: минимум 24px, максимум 56px
+        const size = Math.min(56, 24 + Math.sqrt(total) * 5);
+        const marker = L.marker([b.lat, b.lon], {
+            icon: L.divIcon({
+                className: '',
+                html: `<div class="v-pulse ${isDl?'dl':''}"
+                          style="width:${size}px;height:${size}px"></div>`,
+                iconSize: [size, size],
+                iconAnchor: [size/2, size/2],
+            })
+        });
+        const top = b.items.slice(0, 6);
+        const more = b.items.length - top.length;
+        const list = top.map(it =>
+            `<div style="display:flex;gap:.5rem;justify-content:space-between;
+                       padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+                <span style="font-family:var(--font-mono);font-size:.78rem">${escapeHtml(it.ip)}</span>
+                <span style="font-size:.72rem;color:var(--text-3)">
+                    ${it.visits}v ${it.downloads?'· '+it.downloads+'dl':''}
+                </span>
+            </div>`
+        ).join('');
+        const head = top[0] || {};
+        marker.bindPopup(`
+            <div style="min-width:230px">
+                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+                    <div style="font-size:1.2rem">${flagEmoji(head.country_code)}</div>
+                    <div>
+                        <div style="font-weight:600">${escapeHtml(head.city || head.country || 'Локация')}</div>
+                        <div style="font-size:.72rem;color:var(--text-3)">${escapeHtml(head.country || '')}</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:.6rem;margin-bottom:.5rem;font-size:.78rem">
+                    <span style="color:#9bc1ff">${b.visits} визитов</span>
+                    ${b.downloads?`<span style="color:#f4c87a">${b.downloads} скач.</span>`:''}
+                </div>
+                <div>${list}${more>0?`<div style="font-size:.72rem;color:var(--text-3);padding-top:4px">+ ещё ${more}…</div>`:''}</div>
+            </div>
+        `);
+        markersLayer.addLayer(marker);
+    });
+}
+
+document.querySelectorAll('#vRange button').forEach(b => {
+    b.addEventListener('click', () => {
+        document.querySelectorAll('#vRange button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        currentRange = parseInt(b.dataset.d);
+        load();
+    });
+});
+document.getElementById('vRefresh').addEventListener('click', load);
+document.getElementById('vSearch').addEventListener('input', renderTable);
+
+load();
+})();
+</script>
+{% endblock %}

@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS page_visits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     path TEXT NOT NULL,
     ip_hash TEXT DEFAULT '',
+    ip TEXT DEFAULT '',
+    user_agent TEXT DEFAULT '',
     referrer TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -55,7 +57,37 @@ CREATE TABLE IF NOT EXISTS page_visits (
 CREATE TABLE IF NOT EXISTS downloads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ip_hash TEXT DEFAULT '',
+    ip TEXT DEFAULT '',
+    user_agent TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Кэш геолокации по IP (ip-api.com)
+CREATE TABLE IF NOT EXISTS ip_geo (
+    ip          TEXT PRIMARY KEY,
+    country     TEXT DEFAULT '',
+    country_code TEXT DEFAULT '',
+    region      TEXT DEFAULT '',
+    city        TEXT DEFAULT '',
+    lat         REAL DEFAULT 0,
+    lon         REAL DEFAULT 0,
+    isp         TEXT DEFAULT '',
+    status      TEXT DEFAULT '',
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Block Blast: лидерборд
+CREATE TABLE IF NOT EXISTS blast_scores (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_name  TEXT NOT NULL,
+    score        INTEGER NOT NULL,
+    lines        INTEGER DEFAULT 0,
+    combo_max    INTEGER DEFAULT 0,
+    moves        INTEGER DEFAULT 0,
+    duration_ms  INTEGER DEFAULT 0,
+    ip_hash      TEXT DEFAULT '',
+    ip           TEXT DEFAULT '',
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS forum_replies (
@@ -120,6 +152,13 @@ CREATE INDEX IF NOT EXISTS idx_replies_post   ON forum_replies(post_id);
 CREATE INDEX IF NOT EXISTS idx_secrets_unlock ON event_secrets(unlock_at);
 CREATE INDEX IF NOT EXISTS idx_unlocks_token  ON event_secret_unlocks(token);
 CREATE INDEX IF NOT EXISTS idx_game_score     ON game_scores(score DESC);
+CREATE INDEX IF NOT EXISTS idx_blast_score    ON blast_scores(score DESC);
+"""
+
+# Индексы по колонкам, добавляемым миграцией — создаются после ALTER TABLE.
+POST_MIGRATION_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_visits_ip      ON page_visits(ip);
+CREATE INDEX IF NOT EXISTS idx_downloads_ip   ON downloads(ip);
 """
 
 DEFAULT_SETTINGS = {
@@ -178,6 +217,12 @@ DEFAULT_SETTINGS = {
     "game_subtitle":      "Реакция · 30 секунд · топ-10 на сайте",
     "game_prize_text":    "Топ-1 на конец месяца получает уникальный бета-доступ к V3.",
     "game_duration_ms":   "30000",
+
+    # ── Block Blast (новый ивент) ──
+    "blast_enabled":      "0",
+    "blast_title":        "JARVIS Block Blast",
+    "blast_subtitle":     "Размещай фигуры · собирай линии · выбивай комбо",
+    "blast_prize_text":   "Топ-3 месяца получают эксклюзивный бейдж в Telegram и ранний доступ к V3.",
 }
 
 
@@ -191,6 +236,25 @@ def get_db():
 def init_db():
     conn = get_db()
     conn.executescript(SCHEMA)
+    conn.commit()
+
+    # Миграция: добавляем колонки в существующие таблицы, если их нет
+    def _ensure_col(table, col, ddl):
+        cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        if col not in cols:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+            except Exception:
+                pass
+
+    _ensure_col("page_visits", "ip",         "ip TEXT DEFAULT ''")
+    _ensure_col("page_visits", "user_agent", "user_agent TEXT DEFAULT ''")
+    _ensure_col("downloads",   "ip",         "ip TEXT DEFAULT ''")
+    _ensure_col("downloads",   "user_agent", "user_agent TEXT DEFAULT ''")
+    conn.commit()
+
+    # Индексы, которые опираются на новые колонки
+    conn.executescript(POST_MIGRATION_INDEXES)
     conn.commit()
 
     # Seed если пусто

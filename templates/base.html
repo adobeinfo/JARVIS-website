@@ -79,6 +79,14 @@
                         >{{ icon('gamepad', 15) }} Игра</a
                     >
                     {% endif %}
+                    {% if site.blast_enabled_bool %}
+                    <a
+                        href="{{ url_for('blast_page') }}"
+                        class="nav-blast {{ 'active' if request.endpoint=='blast_page' else '' }}"
+                        style="background:linear-gradient(90deg,#7cf2ff,#b18cff,#ff7ab6);color:#0b0b10 !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;"
+                        >{{ icon('sparkles', 14) }} Block Blast</a
+                    >
+                    {% endif %}
                     {% if event_active %}
                     <a
                         href="{{ url_for('event_page') }}"

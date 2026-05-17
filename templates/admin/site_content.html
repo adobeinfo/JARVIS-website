@@ -242,6 +242,39 @@
     </div>
   </div>
 
+  {# ─────────────── BLOCK BLAST ─────────────── #}
+  <div class="a-card" id="blast">
+    <div class="a-card-head">
+      <div>
+        <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('sparkles', 16) }} JARVIS Block Blast</div>
+        <div class="a-help" style="margin-top:0.3rem;">
+          Пазл-аркада 8×8 с лидербордом и комбо. Когда включена — появляется в навбаре. Скоры —
+          <a href="{{ url_for('admin_blast') }}" style="color:var(--accent);">Block Blast · скоры</a>.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="blast_enabled" {% if s.blast_enabled == '1' %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Название игры</label>
+      <input class="a-input" type="text" name="blast_title" value="{{ s.blast_title }}" />
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Подзаголовок</label>
+      <input class="a-input" type="text" name="blast_subtitle" value="{{ s.blast_subtitle }}" />
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Приз (плашка над игрой) — опционально</label>
+      <input class="a-input" type="text" name="blast_prize_text" value="{{ s.blast_prize_text }}"
+             placeholder="Например: топ-3 месяца получают эксклюзивный бейдж" />
+    </div>
+  </div>
+
   <div style="display:flex;gap:0.6rem;flex-wrap:wrap;position:sticky;bottom:1rem;
               padding:1rem;background:rgba(11,11,16,0.85);
               backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
