@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Pixel Battle — JARVIS{% endblock %}
+{% block content %}
+
+<section class="pixel-hero">
+  <div class="container" style="text-align:center;">
+    <div class="section-label">{{ icon('grid', 14) }} Пиксель Батл</div>
+    <h2 class="pixel-title">Захвати поле</h2>
+    <p class="pixel-desc">32×32 — большой пиксель, маленькое поле. Раз в <strong id="cooldownDisplay">{{ pixel_cooldown }}</strong> сек.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0;">
+  <div class="pixel-frame">
+    <div class="pixel-frame-inner">
+      <div class="pixel-toolbar">
+        <div class="pixel-toolbar-row">
+          <div class="pixel-color-picker">
+            <label class="pixel-label">Цвет</label>
+            <div class="pixel-palette" id="pixelPalette"></div>
+          </div>
+          <div class="pixel-toolbar-info">
+            <div class="pixel-timer-wrap">
+              <div class="pixel-label">Таймер</div>
+              <div class="pixel-timer" id="pixelTimer">✓</div>
+            </div>
+            <div class="pixel-stats">
+              <div class="pixel-label">Занято</div>
+              <div class="pixel-stat-num" id="pixelTotal">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pixel-canvas-frame">
+        <div class="pixel-canvas-wrap">
+          <canvas id="pixelCanvas" width="512" height="512"></canvas>
+          <div class="pixel-loading" id="pixelLoading">Загрузка холста...</div>
+        </div>
+        <div class="pixel-coords" id="pixelCoords">—</div>
+      </div>
+
+      <div class="pixel-actions">
+        <button class="pixel-reset-btn" id="pixelResetView">⟳ Сброс вида</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  const COLS = 32, ROWS = 32, CELL = 16;
+  const canvas = document.getElementById('pixelCanvas');
+  const ctx = canvas.getContext('2d');
+  const timerEl = document.getElementById('pixelTimer');
+  const coordsEl = document.getElementById('pixelCoords');
+  const totalEl = document.getElementById('pixelTotal');
+  const loadingEl = document.getElementById('pixelLoading');
+
+  let selectedColor = '#06b6d4';
+  let pixels = {};
+  let canPlace = true;
+  let cooldown = parseInt(document.getElementById('cooldownDisplay').textContent, 10) || 10;
+
+  // ── Палитра готовых цветов ──
+  const PALETTE = [
+    '#000000','#545454','#8e8e93','#c7c7cc','#ffffff',
+    '#ff3b30','#ff6b6b','#ff7ab6','#ff375f',
+    '#ff9500','#ffb84d','#ffcc00',
+    '#34c759','#22c55e','#34d399',
+    '#5ac8fa','#6aa3ff','#007aff',
+    '#06b6d4','#14b8a6','#2dd4bf',
+  ];
+  const paletteEl = document.getElementById('pixelPalette');
+  PALETTE.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'pixel-swatch';
+    btn.style.backgroundColor = c;
+    btn.dataset.color = c;
+    btn.addEventListener('click', () => {
+      selectedColor = c;
+      paletteEl.querySelectorAll('.pixel-swatch').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    paletteEl.appendChild(btn);
+  });
+  // По умолчанию выбран первый фиолетовый
+  const defaultSwatch = paletteEl.querySelector('[data-color="#06b6d4"]');
+  if (defaultSwatch) defaultSwatch.classList.add('active');
+
+  // ── Загрузка холста ──
+  async function loadCanvas() {
+    loadingEl.style.display = 'block';
+    try {
+      const resp = await fetch('/api/pixel/canvas');
+      const data = await resp.json();
+      pixels = {};
+      for (const [x, y, color] of data.pixels) {
+        pixels[x+','+y] = color;
+      }
+      render();
+      totalEl.textContent = data.pixels.length;
+    } catch(e) {
+      console.error('Pixel load error', e);
+    }
+    loadingEl.style.display = 'none';
+  }
+
+  // ── Отрисовка ──
+  function render() {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Сетка
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 32; i++) {
+      ctx.beginPath(); ctx.moveTo(i*CELL, 0); ctx.lineTo(i*CELL, 512); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i*CELL); ctx.lineTo(512, i*CELL); ctx.stroke();
+    }
+
+    // Пиксели
+    for (const key in pixels) {
+      const [x, y] = key.split(',').map(Number);
+      ctx.fillStyle = pixels[key];
+      ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+    }
+  }
+
+  // ── Клик ──
+  canvas.addEventListener('click', async function(e) {
+    if (!canPlace) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+    const x = Math.floor(mx / CELL);
+    const y = Math.floor(my / CELL);
+    if (x < 0 || x >= 32 || y < 0 || y >= 32) return;
+    coordsEl.textContent = x + ', ' + y;
+
+    const color = selectedColor;
+    try {
+      canPlace = false;
+      const resp = await fetch('/api/pixel/place', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({x, y, color}),
+      });
+      const result = await resp.json();
+      if (resp.ok && result.ok) {
+        pixels[x+','+y] = color;
+        render();
+        totalEl.textContent = Object.keys(pixels).length;
+        startCooldown();
+      } else if (result.error === 'cooldown') {
+        startCooldown(result.remaining || cooldown);
+        flashMsg('Подождите ' + (result.remaining || cooldown) + ' сек');
+      } else {
+        canPlace = true;
+        flashMsg(result.error || 'Ошибка');
+      }
+    } catch(e) {
+      canPlace = true;
+      flashMsg('Ошибка сети');
+    }
+  });
+
+  // ── Кулдаун ──
+  function startCooldown(sec) {
+    let t = sec || cooldown;
+    canPlace = false;
+    timerEl.textContent = t;
+    timerEl.style.color = '#f43f5e';
+    const iv = setInterval(() => {
+      t--;
+      timerEl.textContent = t;
+      if (t <= 0) {
+        clearInterval(iv);
+        timerEl.textContent = '✓';
+        timerEl.style.color = '#22c55e';
+        canPlace = true;
+      }
+    }, 1000);
+  }
+
+  // ── Флеш-сообщение ──
+  function flashMsg(msg) {
+    const el = document.createElement('div');
+    el.className = 'pixel-flash';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+
+  // ── Zoom / Pan ──
+  let scale = 1, offsetX = 0, offsetY = 0;
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const dz = e.deltaY > 0 ? 0.9 : 1.1;
+    const ns = Math.min(5, Math.max(1, scale * dz));
+    offsetX = mx - (mx - offsetX) * ns / scale;
+    offsetY = my - (my - offsetY) * ns / scale;
+    scale = ns;
+    applyTransform();
+  }, {passive: false});
+
+  let dragging = false, dragX, dragY;
+  canvas.addEventListener('mousedown', function(e) {
+    if (e.button === 1 || e.button === 0) {
+      dragging = true;
+      dragX = e.clientX;
+      dragY = e.clientY;
+    }
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    offsetX += (e.clientX - dragX);
+    offsetY += (e.clientY - dragY);
+    dragX = e.clientX;
+    dragY = e.clientY;
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+
+  function applyTransform() {
+    canvas.style.transform = 'translate('+offsetX+'px,'+offsetY+'px) scale('+scale+')';
+    canvas.style.transformOrigin = '0 0';
+  }
+
+  document.getElementById('pixelResetView').addEventListener('click', () => {
+    scale = 1; offsetX = 0; offsetY = 0;
+    canvas.style.transform = '';
+    canvas.style.transformOrigin = '';
+  });
+
+  // ── Ховер координаты ──
+  canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const x = Math.floor(mx / CELL);
+    const y = Math.floor(my / CELL);
+    if (x >= 0 && x < 32 && y >= 0 && y < 32) {
+      coordsEl.textContent = x + ', ' + y;
+    }
+  });
+
+  loadCanvas();
+})();
+</script>
+
+<style>
+.pixel-hero { padding: 7rem 0 1.5rem; }
+.pixel-title { font-size: clamp(1.8rem,4vw,2.8rem); font-weight:800; letter-spacing:-0.04em; background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,0.5)); -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; margin-bottom:.3rem; }
+.pixel-desc { color:var(--text-3); font-size:.95rem; }
+.pixel-desc strong { color:var(--accent); }
+
+/* ── Frame ── */
+.pixel-frame { max-width:720px; margin:0 auto; padding:0 1rem; }
+.pixel-frame-inner { background:var(--glass-2); border:1px solid var(--line); border-radius:var(--radius-xl); padding:1.2rem; box-shadow:var(--shadow-2); }
+
+/* Toolbar */
+.pixel-toolbar { margin-bottom:1rem; }
+.pixel-toolbar-row { display:flex; gap:1rem; align-items:flex-start; }
+.pixel-color-picker { flex:1; }
+.pixel-label { font-size:.65rem; text-transform:uppercase; letter-spacing:.14em; color:var(--text-3); font-weight:600; margin-bottom:.3rem; }
+.pixel-palette { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.pixel-swatch { width:100%; aspect-ratio:1; border:2px solid transparent; border-radius:3px; cursor:pointer; padding:0; transition:border-color .12s,transform .12s; }
+.pixel-swatch:hover { transform:scale(1.2); z-index:1; }
+.pixel-swatch.active { border-color:#fff; box-shadow:0 0 0 1px #fff; transform:scale(1.15); }
+.pixel-toolbar-info { display:flex; gap:.8rem; flex-shrink:0; }
+.pixel-timer-wrap, .pixel-stats { text-align:center; min-width:50px; }
+.pixel-timer { font-size:1.4rem; font-weight:800; color:var(--accent); line-height:1; }
+.pixel-stat-num { font-size:1.2rem; font-weight:700; color:var(--text); }
+
+/* Canvas frame */
+.pixel-canvas-frame { background:var(--bg); border:1px solid var(--line-2); border-radius:var(--radius); padding:8px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.pixel-canvas-wrap { overflow:hidden; border-radius:calc(var(--radius) - 4px); position:relative; cursor:crosshair; line-height:0; }
+  #pixelCanvas { display:block; cursor:crosshair; image-rendering:pixelated; transition:transform .05s; width:512px; height:512px; max-width:100%; }
+.pixel-coords { font-size:.78rem; color:var(--text-3); font-family:var(--font-mono); text-align:center; }
+.pixel-loading { position:absolute; inset:0; display:grid; place-items:center; color:var(--text-3); font-size:.95rem; background:var(--bg); z-index:2; }
+
+/* Actions */
+.pixel-actions { margin-top:.8rem; text-align:center; }
+.pixel-reset-btn { background:var(--glass); border:1px solid var(--line-2); color:var(--text-2); border-radius:8px; padding:.4rem .8rem; font-size:.8rem; cursor:pointer; transition:color .2s,border-color .2s; }
+.pixel-reset-btn:hover { color:var(--text); border-color:var(--text-3); }
+
+/* Flash message */
+.pixel-flash { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); background:var(--bg-2); border:1px solid var(--line-2); color:var(--text); padding:.55rem 1.1rem; border-radius:10px; font-size:.85rem; z-index:999; animation:pixel-fade 2s ease forwards; }
+@keyframes pixel-fade { 0%{opacity:0;transform:translateX(-50%) translateY(10px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 85%{opacity:1} 100%{opacity:0} }
+
+@media(max-width:540px) {
+  .pixel-frame-inner { padding:.8rem; }
+  .pixel-toolbar-row { flex-direction:column; }
+  .pixel-toolbar-info { flex-direction:row; }
+  .pixel-palette { grid-template-columns:repeat(7,1fr); }
+  #pixelCanvas { width:100%; height:auto; }
+}
+</style>
+{% endblock %}

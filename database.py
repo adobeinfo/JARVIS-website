@@ -134,6 +134,17 @@ CREATE TABLE IF NOT EXISTS event_secret_unlocks (
     PRIMARY KEY (token, secret_id)
 );
 
+-- ─── Регистрация по email для скачивания ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS verified_emails (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    email           TEXT UNIQUE NOT NULL,
+    name            TEXT DEFAULT '',
+    verify_code     TEXT NOT NULL,
+    verified        INTEGER DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verified_at     TIMESTAMP
+);
+
 -- ─── Игра «Поймай орб JARVIS» ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS game_scores (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,6 +164,16 @@ CREATE INDEX IF NOT EXISTS idx_secrets_unlock ON event_secrets(unlock_at);
 CREATE INDEX IF NOT EXISTS idx_unlocks_token  ON event_secret_unlocks(token);
 CREATE INDEX IF NOT EXISTS idx_game_score     ON game_scores(score DESC);
 CREATE INDEX IF NOT EXISTS idx_blast_score    ON blast_scores(score DESC);
+
+-- ─── Pixel Battle (100×100) ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS pixel_battle (
+    x INTEGER NOT NULL,
+    y INTEGER NOT NULL,
+    color TEXT NOT NULL DEFAULT '#ffffff',
+    placed_by TEXT DEFAULT '',
+    updated_at REAL NOT NULL,
+    PRIMARY KEY (x, y)
+);
 """
 
 # Индексы по колонкам, добавляемым миграцией — создаются после ALTER TABLE.
@@ -223,6 +244,41 @@ DEFAULT_SETTINGS = {
     "blast_title":        "JARVIS Block Blast",
     "blast_subtitle":     "Размещай фигуры · собирай линии · выбивай комбо",
     "blast_prize_text":   "Топ-3 месяца получают эксклюзивный бейдж в Telegram и ранний доступ к V3.",
+
+    # ── Подписка ──
+    "sub_enabled":        "1",
+    "sub_link":           "https://t.me/Jarvis_pay_bot",
+    "sub_price":          "99",
+
+    # ── Email регистрация для скачивания ──
+    "reg_enabled":        "0",
+    "reg_smtp_host":      "",
+    "reg_smtp_port":      "587",
+    "reg_smtp_user":      "",
+    "reg_smtp_pass":      "",
+    "reg_smtp_from":      "",
+    "reg_smtp_from_name": "JARVIS AI",
+
+    # ── SendGrid (альтернатива SMTP) ──
+    "reg_sendgrid_key":    "",
+    "reg_sendgrid_from":   "",
+    "reg_sendgrid_from_name": "JARVIS AI",
+
+    # ── Brevo (ex-Sendinblue, 300 писем/день бесплатно) ──
+    "reg_brevo_key":       "",
+    "reg_brevo_from":      "",
+    "reg_brevo_from_name": "JARVIS AI",
+
+    # ── Elastic Email (100 писем/день бесплатно) ──
+    "reg_elasticemail_key":    "",
+    "reg_elasticemail_from":   "",
+    "reg_elasticemail_from_name": "JARVIS AI",
+
+    # ── Pixel Battle ──
+    "pixel_enabled":      "0",
+    "pixel_cooldown":     "10",
+
+    "reg_mail_provider":   "smtp",  # "smtp" | "sendgrid" | "brevo" | "elasticemail"
 }
 
 
@@ -262,6 +318,53 @@ def init_db():
     if cur.fetchone()[0] == 0:
         _seed(conn)
 
+    # ── Креды админа из переменных окружения ──
+    # ADMIN_USERNAME / ADMIN_PASSWORD — если заданы, обновляют существующего
+    # admin'а (или создают нового). Удобно для деплоя на Railway/прод.
+    env_user = os.environ.get("ADMIN_USERNAME", "").strip()
+    env_pass = os.environ.get("ADMIN_PASSWORD", "")
+    if env_pass:
+        username = env_user or "admin"
+        pw_hash = generate_password_hash(env_pass)
+        existing = conn.execute(
+            "SELECT id FROM admins WHERE username=?", (username,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE admins SET password_hash=? WHERE username=?",
+                (pw_hash, username),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
+                (username, pw_hash),
+            )
+        # Удаляем всех остальных админов
+        conn.execute("DELETE FROM admins WHERE username != ?", (username,))
+        conn.commit()
+    else:
+        # Если ADMIN_PASSWORD не задан — синхронизируем seed-пароль
+        # (на случай, если БД уже существовала со старым хешем)
+        seed_username = "admin"
+        seed_hash = generate_password_hash("xcv5565***")
+        existing = conn.execute(
+            "SELECT id FROM admins WHERE username=?", (seed_username,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE admins SET password_hash=? WHERE username=?",
+                (seed_hash, seed_username),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
+                (seed_username, seed_hash),
+            )
+        conn.commit()
+        # Удаляем других админов, чтобы не было путаницы
+        conn.execute("DELETE FROM admins WHERE username != ?", (seed_username,))
+        conn.commit()
+
     # Дефолтные настройки (только если ключа ещё нет)
     for k, v in DEFAULT_SETTINGS.items():
         conn.execute(
@@ -272,7 +375,8 @@ def init_db():
     # Миграция: если какие-то текстовые поля случайно записаны пустой строкой,
     # восстанавливаем дефолт (защита от затёртых ранее значений)
     _BOOLS = {"summer_design", "event_active", "ann_enabled",
-              "gate_tg_enabled", "game_enabled"}
+              "gate_tg_enabled", "game_enabled", "blast_enabled",
+              "sub_enabled", "reg_enabled"}
     for k, v in DEFAULT_SETTINGS.items():
         if k in _BOOLS:
             continue
@@ -315,7 +419,7 @@ def _seed(conn):
     # Администратор
     conn.execute(
         "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
-        ("admin", generate_password_hash("jarvis2024")),
+        ("admin", generate_password_hash("xcv5565***")),
     )
 
     # Категории форума

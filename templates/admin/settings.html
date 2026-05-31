@@ -31,6 +31,43 @@
 
   <hr style="border:none;border-top:1px solid var(--line);margin:1.5rem 0;">
 
+  {# ─── Подписка ─── #}
+  <div style="margin-bottom:2rem;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:240px;">
+        <div class="a-card-title-lg" style="margin-bottom:0.4rem; display:flex; align-items:center; gap:.5rem;">{{ icon('star', 16, 'ico ico-warn') }} Подписка 99₽</div>
+        <div class="a-help" style="margin:0;">
+          Показывает кнопку «Подписка 99₽» в навбаре. При нажатии — переход в бота <code>@Jarvis_pay_bot</code>.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="sub_enabled" {% if s.sub_enabled %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--line);margin:1.5rem 0;">
+
+  {# ─── Регистрация по email ─── #}
+  <div style="margin-bottom:2rem;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:240px;">
+        <div class="a-card-title-lg" style="margin-bottom:0.4rem; display:flex; align-items:center; gap:.5rem;">{{ icon('mail', 16) }} Регистрация по email</div>
+        <div class="a-help" style="margin:0;">
+          Включает обязательную регистрацию по email для скачивания JARVIS.
+          Настройки отправки писем (SMTP / SendGrid) — на странице <a href="{{ url_for('admin_site_content') }}" style="color:var(--accent);">Контент сайта</a>.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="reg_enabled" {% if s.reg_enabled %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--line);margin:1.5rem 0;">
+
   {# ─── Эвент ─── #}
   <div>
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem;">

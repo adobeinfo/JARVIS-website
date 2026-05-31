@@ -5,6 +5,8 @@ import random
 import hashlib
 import functools
 import json as _json
+from dotenv import load_dotenv
+load_dotenv()
 from flask import (
     Flask, render_template, request, redirect,
     url_for, session, flash, send_file, g, abort, jsonify, make_response
@@ -246,7 +248,8 @@ def _hash_ip():
 
 _BOOL_SETTING_KEYS_BASE = {"summer_design", "event_active",
                            "ann_enabled", "gate_tg_enabled",
-                           "game_enabled", "blast_enabled"}
+                           "game_enabled", "blast_enabled",
+                            "sub_enabled", "reg_enabled", "pixel_enabled"}
 
 
 def _site_settings_dict():
@@ -271,12 +274,22 @@ def _site_settings_dict():
 def inject_globals():
     """Делает все настройки сайта доступными в шаблонах через `site` + старые поля."""
     s = _site_settings_dict()
+    try:
+        db = get_conn()
+        s["download_count"]  = db.execute("SELECT COUNT(*) FROM downloads").fetchone()[0] or 0
+        s["today_downloads"] = db.execute("SELECT COUNT(*) FROM downloads WHERE date(created_at)=date('now')").fetchone()[0] or 0
+    except Exception:
+        s["download_count"]  = 0
+        s["today_downloads"] = 0
     s["summer_design_bool"] = (s.get("summer_design", "0") == "1")
     s["event_active_bool"]  = (s.get("event_active",  "0") == "1")
     s["ann_enabled_bool"]   = (s.get("ann_enabled",   "0") == "1")
     s["gate_tg_enabled_bool"] = (s.get("gate_tg_enabled", "0") == "1")
     s["game_enabled_bool"]  = (s.get("game_enabled",  "0") == "1")
     s["blast_enabled_bool"] = (s.get("blast_enabled", "0") == "1")
+    s["sub_enabled_bool"]   = (s.get("sub_enabled",   "1") == "1")
+    s["reg_enabled_bool"]   = (s.get("reg_enabled",   "0") == "1")
+    s["pixel_enabled_bool"] = (s.get("pixel_enabled", "0") == "1")
     return {
         "site":           s,
         "summer_design":  s["summer_design_bool"],
@@ -332,6 +345,262 @@ def news_detail(nid):
     return render_template("news_detail.html", article=article)
 
 
+# ── Email-регистрация для скачивания ─────────────────────────────────────────
+
+import smtplib
+import string as _string
+
+def _send_verify_email(email, name, code):
+    link = url_for("verify_email", code=code, _external=True)
+    body_plain = (
+        f"Здравствуйте{', ' + name if name else ''}!\n\n"
+        "Вы зарегистрировались для скачивания JARVIS AI Assistant.\n\n"
+        "Для подтверждения email перейдите по ссылке:\n"
+        f"{link}\n\n"
+        "Если вы не регистрировались — проигнорируйте это письмо.\n\n"
+        "-- JARVIS Team"
+    )
+    body_html = f"""\
+<html><body style="font-family:sans-serif;padding:20px;max-width:560px;margin:auto;">
+<div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px;padding:32px;text-align:center;color:#fff;">
+<h2 style="margin:0 0 8px;">Подтверждение email</h2>
+<p style="margin:0 0 20px;opacity:.9;">{name + ', ' if name else ''}остался последний шаг</p>
+<a href="{link}" style="display:inline-block;background:#fff;color:#667eea;padding:14px 36px;border-radius:40px;text-decoration:none;font-weight:700;font-size:16px;">Подтвердить</a>
+</div>
+<p style="color:#888;font-size:13px;margin-top:20px;text-align:center;">
+Если вы не регистрировались — проигнорируйте это письмо.
+</p></body></html>"""
+
+    provider = get_setting("reg_mail_provider", "smtp").strip().lower()
+
+    if provider == "sendgrid":
+        return _send_via_sendgrid(email, name, body_plain, body_html)
+    if provider == "brevo":
+        return _send_via_brevo(email, name, body_plain, body_html)
+    if provider == "elasticemail":
+        return _send_via_elasticemail(email, name, body_plain, body_html)
+    return _send_via_smtp(email, name, body_plain, body_html)
+
+
+def _send_via_smtp(email, name, body_plain, body_html):
+    host = get_setting("reg_smtp_host", "").strip()
+    port = int(get_setting("reg_smtp_port", "587"))
+    user = get_setting("reg_smtp_user", "").strip()
+    pw   = get_setting("reg_smtp_pass", "").strip()
+    frm  = get_setting("reg_smtp_from", "").strip() or user
+    frm_name = get_setting("reg_smtp_from_name", "JARVIS AI").strip()
+    if not host or not user:
+        return False
+    subject = "Подтверждение email — JARVIS AI"
+    try:
+        s = smtplib.SMTP(host, port, timeout=15)
+        s.starttls()
+        s.login(user, pw)
+        msg = (
+            f"From: {frm_name} <{frm}>\r\n"
+            f"To: {email}\r\n"
+            f"Subject: {subject}\r\n"
+            f"MIME-Version: 1.0\r\n"
+            f"Content-Type: text/plain; charset=utf-8\r\n\r\n"
+            f"{body_plain}"
+        )
+        s.sendmail(frm, [email], msg.encode("utf-8"))
+        s.quit()
+        return True
+    except Exception as e:
+        print(f"[SMTP send error] {e}")
+        return False
+
+
+def _send_via_brevo(email, name, body_plain, body_html):
+    key = get_setting("reg_brevo_key", "").strip()
+    frm = get_setting("reg_brevo_from", "").strip()
+    frm_name = get_setting("reg_brevo_from_name", "JARVIS AI").strip()
+    if not key or not frm:
+        print("[Brevo] Missing API key or from address")
+        return False
+    try:
+        import requests
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "sender": {"name": frm_name, "email": frm},
+                "to": [{"email": email, "name": name or email}],
+                "subject": "Подтверждение email — JARVIS AI",
+                "htmlContent": body_html,
+                "textContent": body_plain,
+            },
+            timeout=30,
+        )
+        return resp.status_code in (200, 201, 202)
+    except Exception as e:
+        print(f"[Brevo send error] {e}")
+        return False
+
+
+def _send_via_elasticemail(email, name, body_plain, body_html):
+    key = get_setting("reg_elasticemail_key", "").strip()
+    frm = get_setting("reg_elasticemail_from", "").strip()
+    frm_name = get_setting("reg_elasticemail_from_name", "JARVIS AI").strip()
+    if not key or not frm:
+        print("[ElasticEmail] Missing API key or from address")
+        return False
+    try:
+        import requests
+        resp = requests.post(
+            "https://api.elasticemail.com/v4/emails/transactional",
+            headers={
+                "X-ElasticEmail-ApiKey": key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "Recipients": {"To": [email]},
+                "Content": {
+                    "From": frm,
+                    "FromName": frm_name,
+                    "Subject": "Подтверждение email — JARVIS AI",
+                    "Body": [
+                        {"ContentType": "HTML", "Content": body_html},
+                        {"ContentType": "PlainText", "Content": body_plain},
+                    ],
+                },
+            },
+            timeout=30,
+        )
+        return resp.status_code in (200, 201, 202)
+    except Exception as e:
+        print(f"[ElasticEmail send error] {e}")
+        return False
+
+
+def _send_via_sendgrid(email, name, body_plain, body_html):
+    sg_key = get_setting("reg_sendgrid_key", "").strip()
+    frm    = get_setting("reg_sendgrid_from", "").strip()
+    frm_name = get_setting("reg_sendgrid_from_name", "JARVIS AI").strip()
+    if not sg_key or not frm:
+        print("[SendGrid] Missing API key or from address")
+        return False
+    try:
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+        message = Mail(
+            from_email=f"{frm_name} <{frm}>",
+            to_emails=email,
+            subject="Подтверждение email — JARVIS AI",
+            plain_text_content=body_plain,
+            html_content=body_html,
+        )
+        sg = SendGridAPIClient(sg_key)
+        resp = sg.send(message)
+        return resp.status_code in (200, 201, 202)
+    except Exception as e:
+        print(f"[SendGrid send error] {e}")
+        return False
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if get_setting("reg_enabled", "0") != "1":
+        flash("Регистрация временно отключена.", "info")
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip().lower()
+        name  = (request.form.get("name") or "").strip()[:40]
+        if not email or "@" not in email or "." not in email:
+            flash("Введите корректный email.", "error")
+            return redirect(url_for("register"))
+        db = get_conn()
+        exist = db.execute(
+            "SELECT verified FROM verified_emails WHERE email=?", (email,)
+        ).fetchone()
+        if exist:
+            if exist["verified"]:
+                flash("Этот email уже подтверждён. Войдите в свой email и перейдите по ссылке для входа.", "info")
+            else:
+                flash("На этот email уже отправлено письмо. Проверьте папку «Спам».", "info")
+            return redirect(url_for("register"))
+        code = uuid.uuid4().hex[:20]
+        db.execute(
+            "INSERT INTO verified_emails (email, name, verify_code) VALUES (?, ?, ?)",
+            (email, name, code),
+        )
+        db.commit()
+        ok = _send_verify_email(email, name, code)
+        if ok:
+            flash("Письмо с подтверждением отправлено! Проверьте почту (и папку «Спам»).", "success")
+        else:
+            flash("Не удалось отправить письмо. Обратитесь к администратору.", "error")
+        return redirect(url_for("register"))
+    return render_template("register.html")
+
+
+@app.route("/verify/<code>")
+def verify_email(code):
+    if not code:
+        abort(404)
+    db = get_conn()
+    row = db.execute(
+        "SELECT * FROM verified_emails WHERE verify_code=? AND verified=0",
+        (code,),
+    ).fetchone()
+    if not row:
+        # Возможно уже подтверждён
+        row2 = db.execute(
+            "SELECT * FROM verified_emails WHERE verify_code=?", (code,)
+        ).fetchone()
+        if row2 and row2["verified"]:
+            flash("Email уже подтверждён!", "success")
+        else:
+            flash("Неверная или устаревшая ссылка.", "error")
+        return redirect(url_for("download"))
+    db.execute(
+        "UPDATE verified_emails SET verified=1, verified_at=CURRENT_TIMESTAMP WHERE id=?",
+        (row["id"],),
+    )
+    db.commit()
+    # Ставим куку на 90 дней
+    resp = make_response(redirect(url_for("download")))
+    resp.set_cookie("verified_email", row["email"],
+                    max_age=60 * 60 * 24 * 90, httponly=True, samesite="Lax")
+    flash("Email подтверждён! Теперь вы можете скачать JARVIS.", "success")
+    return resp
+
+
+@app.route("/verify/send-again", methods=["POST"])
+def resend_verify():
+    email = (request.form.get("email") or "").strip().lower()
+    if not email:
+        flash("Введите email.", "error")
+        return redirect(url_for("register"))
+    db = get_conn()
+    row = db.execute(
+        "SELECT * FROM verified_emails WHERE email=? AND verified=0",
+        (email,),
+    ).fetchone()
+    if not row:
+        flash("Email не найден или уже подтверждён.", "info")
+        return redirect(url_for("register"))
+    # Новый код
+    code = uuid.uuid4().hex[:20]
+    db.execute(
+        "UPDATE verified_emails SET verify_code=? WHERE id=?",
+        (code, row["id"]),
+    )
+    db.commit()
+    ok = _send_verify_email(email, row["name"], code)
+    if ok:
+        flash("Письмо отправлено повторно!", "success")
+    else:
+        flash("Ошибка отправки. Попробуйте позже.", "error")
+    return redirect(url_for("register"))
+
+
 # ── Скачивание ─────────────────────────────────────────────────────────────────
 
 @app.route("/download")
@@ -353,10 +622,25 @@ def download():
     # Скачивание доступно если: есть локальный файл ИЛИ есть URL
     file_available = local_exists or has_url
 
+    # Если включена регистрация — проверяем email
+    reg_on = get_setting("reg_enabled", "0") == "1"
+    verified = False
+    if reg_on:
+        verified_email = request.cookies.get("verified_email", "")
+        if verified_email:
+            row = get_conn().execute(
+                "SELECT verified FROM verified_emails WHERE email=? AND verified=1",
+                (verified_email,),
+            ).fetchone()
+            if row:
+                verified = True
+
     return render_template("download.html",
                            file_exists=file_available,
                            size_mb=size_mb,
-                           github_url=GITHUB_RELEASE_URL if has_url and not local_exists else None)
+                           github_url=GITHUB_RELEASE_URL if has_url and not local_exists else None,
+                           reg_enabled=reg_on,
+                           verified=verified)
 
 
 @app.route("/download/file")
@@ -795,6 +1079,8 @@ def admin_dashboard():
 def admin_settings():
     if request.method == "POST":
         set_setting("summer_design", "1" if request.form.get("summer_design") else "0")
+        set_setting("sub_enabled",   "1" if request.form.get("sub_enabled")   else "0")
+        set_setting("reg_enabled",   "1" if request.form.get("reg_enabled")   else "0")
         set_setting("event_active",  "1" if request.form.get("event_active")  else "0")
         set_setting("event_title",   request.form.get("event_title", "").strip()
                                        or DEFAULT_SETTINGS["event_title"])
@@ -834,6 +1120,8 @@ def admin_settings():
     return render_template("admin/settings.html",
         s={
             "summer_design":        get_setting("summer_design", "0") == "1",
+            "sub_enabled":          get_setting("sub_enabled",   "1") == "1",
+            "reg_enabled":          get_setting("reg_enabled",   "0") == "1",
             "event_active":         get_setting("event_active",  "0") == "1",
             "event_title":          get_setting("event_title",   DEFAULT_SETTINGS["event_title"]),
             "event_text":           get_setting("event_text",    DEFAULT_SETTINGS["event_text"]),
@@ -1134,10 +1422,19 @@ SITE_CONTENT_KEYS = [
     "game_enabled", "game_title", "game_subtitle", "game_prize_text", "game_duration_ms",
     # Blast
     "blast_enabled", "blast_title", "blast_subtitle", "blast_prize_text",
+    # Registration / SMTP / SendGrid / Brevo
+    "reg_enabled", "reg_smtp_host", "reg_smtp_port", "reg_smtp_user",
+    "reg_smtp_pass", "reg_smtp_from", "reg_smtp_from_name",
+    "reg_sendgrid_key", "reg_sendgrid_from", "reg_sendgrid_from_name",
+    "reg_brevo_key", "reg_brevo_from", "reg_brevo_from_name",
+    "reg_elasticemail_key", "reg_elasticemail_from", "reg_elasticemail_from_name",
+    "reg_mail_provider",
+    # Pixel Battle
+    "pixel_enabled",
 ]
 
 
-_BOOL_SETTING_KEYS = {"ann_enabled", "gate_tg_enabled", "game_enabled", "blast_enabled"}
+_BOOL_SETTING_KEYS = {"ann_enabled", "gate_tg_enabled", "game_enabled", "blast_enabled", "sub_enabled", "reg_enabled", "pixel_enabled"}
 
 
 @app.route("/admin/site", methods=["GET", "POST"])
@@ -1458,6 +1755,65 @@ def admin_blast_delete(sid):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  PIXEL BATTLE 100x100
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/pixel")
+def pixel_battle_page():
+    if get_setting("pixel_enabled", "0") != "1":
+        flash("Pixel Battle временно отключён.", "info")
+        return redirect(url_for("index"))
+    return render_template("pixel_battle.html", pixel_cooldown=get_setting("pixel_cooldown", "10"))
+
+
+@app.route("/api/pixel/canvas")
+def api_pixel_canvas():
+    db = get_conn()
+    rows = db.execute("SELECT x, y, color FROM pixel_battle").fetchall()
+    data = [[r["x"], r["y"], r["color"]] for r in rows]
+    return jsonify({"pixels": data})
+
+
+@app.route("/api/pixel/place", methods=["POST"])
+def api_pixel_place():
+    if get_setting("pixel_enabled", "0") != "1":
+        return jsonify({"ok": False, "error": "disabled"}), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        x = int(data.get("x", -1))
+        y = int(data.get("y", -1))
+        color = str(data.get("color", "")).strip()
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "bad_input"}), 400
+    if x < 0 or x >= 32 or y < 0 or y >= 32:
+        return jsonify({"ok": False, "error": "out_of_bounds"}), 400
+    import re
+    if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+        color = "#ffffff"
+    ip = _client_ip()
+    ip_hash = hashlib.md5(ip.encode()).hexdigest()[:12]
+    cooldown = int(get_setting("pixel_cooldown", "10"))
+    now = time.time()
+    db = get_conn()
+
+    # Проверяем кулдаун по ip_hash
+    last = db.execute(
+        "SELECT MAX(updated_at) FROM pixel_battle WHERE placed_by=?", (ip_hash,)
+    ).fetchone()[0]
+    if last and (now - last) < cooldown:
+        remaining = int(cooldown - (now - last))
+        return jsonify({"ok": False, "error": "cooldown", "remaining": remaining}), 429
+
+    db.execute(
+        "INSERT INTO pixel_battle (x, y, color, placed_by, updated_at) VALUES (?,?,?,?,?) "
+        "ON CONFLICT(x,y) DO UPDATE SET color=excluded.color, placed_by=excluded.placed_by, updated_at=excluded.updated_at",
+        (x, y, color, ip_hash, now),
+    )
+    db.commit()
+    return jsonify({"ok": True})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  ADMIN: Посетители (IP + интерактивная карта)
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1661,7 +2017,13 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_ENV") != "production"
     print("=" * 50)
-    print(f"  JARVIS Website → http://localhost:{port}")
-    print("  Админка: /admin  (логин: admin / jarvis2024)")
+    print(f"  JARVIS Website -> http://localhost:{port}")
+    _eu = os.environ.get("ADMIN_USERNAME", "").strip()
+    _ep = os.environ.get("ADMIN_PASSWORD", "")
+    if _ep:
+        print(f"  Admin: /admin  (login: {_eu or 'admin'} / password from ADMIN_PASSWORD)")
+    else:
+        print("  Admin: /admin  (login: admin / xcv5565***)")
+        print("  Change password: set ADMIN_USERNAME / ADMIN_PASSWORD env vars")
     print("=" * 50)
     app.run(host="0.0.0.0", port=port, debug=debug)

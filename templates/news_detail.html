@@ -2,28 +2,79 @@
 {% block title %}{{ article['title'] }} — JARVIS{% endblock %}
 {% block content %}
 
-{% if article['image_url'] %}
-<img src="{{ article['image_url'] }}" alt="{{ article['title'] }}" class="article-cover"/>
-{% endif %}
-
-<div class="article-header" {% if not article['image_url'] %}style="padding-top:calc(var(--nav-height) + 3rem)"{% endif %}>
-  <div class="breadcrumb" style="justify-content:center">
-    <a href="{{ url_for('index') }}">Главная</a>
-    <span class="breadcrumb-sep">/</span>
-    <a href="{{ url_for('news') }}">Новости</a>
-    <span class="breadcrumb-sep">/</span>
-    <span style="color:var(--text-secondary)">{{ article['title'][:40] }}...</span>
+<article class="article-page">
+  {% if article['image_url'] %}
+  <div class="article-cover-wrap">
+    <img src="{{ article['image_url'] }}" alt="{{ article['title'] }}" class="article-cover" />
+    <div class="article-cover-overlay"></div>
   </div>
-  <div class="section-label" style="margin-top:1rem">{{ article['created_at'][:10] }} · {{ article['author'] }}</div>
-  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);letter-spacing:3px;margin-top:.5rem">
-    {{ article['title'] }}
-  </h1>
-</div>
+  {% endif %}
 
-<div class="article-body">
-  {{ article['content'] | safe }}
-  <hr class="divider"/>
-  <a href="{{ url_for('news') }}" class="btn btn-secondary btn-sm">← Все новости</a>
-</div>
+  <div class="article-container">
+    <div class="article-breadcrumb">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <span class="sep">/</span>
+      <a href="{{ url_for('news') }}">Новости</a>
+      <span class="sep">/</span>
+      <span>{{ article['title'][:50] }}</span>
+    </div>
 
+    <div class="article-head">
+      <div class="article-meta">
+        <span class="article-badge">{{ article['created_at'][:10] }}</span>
+        <span class="article-badge">{{ article['author'] }}</span>
+      <span class="article-badge" id="readingTime">~1 мин чтения</span>
+      </div>
+      <script>(function(){var t='{{ article["content"]|striptags|replace(" ","")|trim }}';document.getElementById('readingTime').textContent='~'+Math.max(1,Math.ceil(t.length/1500))+' мин чтения'})();</script>
+      <h1 class="article-title">{{ article['title'] }}</h1>
+      {% if article['excerpt'] %}
+      <p class="article-excerpt">{{ article['excerpt'] }}</p>
+      {% endif %}
+    </div>
+
+    <div class="article-body">
+      {{ article['content'] | safe }}
+    </div>
+
+    <div class="article-footer">
+      <a href="{{ url_for('news') }}" class="btn btn-secondary">← Все новости</a>
+    </div>
+  </div>
+</article>
+
+<style>
+.article-page { padding-bottom:5rem; }
+.article-cover-wrap { position:relative;height:clamp(250px,40vh,500px);overflow:hidden; }
+.article-cover { width:100%;height:100%;object-fit:cover; }
+.article-cover-overlay { position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,var(--bg)); }
+
+.article-container { max-width:760px;margin:-3rem auto 0;padding:0 1.5rem;position:relative;z-index:2; }
+.article-breadcrumb { display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--text-3);margin-bottom:1.5rem; }
+.article-breadcrumb a { color:var(--text-3);transition:color .2s; }
+.article-breadcrumb a:hover { color:var(--accent); }
+.article-breadcrumb .sep { color:var(--text-4); }
+.article-breadcrumb span:last-child { color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px; }
+
+.article-head { margin-bottom:2.5rem; }
+.article-meta { display:flex;gap:.5rem;margin-bottom:.8rem; }
+.article-badge { background:var(--glass-2);border:1px solid var(--line);padding:.2rem .6rem;border-radius:6px;font-size:.72rem;color:var(--text-3);font-weight:500; }
+.article-title { font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:0 0 .8rem;background:linear-gradient(180deg,#fff 30%,rgba(255,255,255,.5));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
+.article-excerpt { font-size:1.1rem;color:var(--text-2);line-height:1.5;margin:0; }
+
+.article-body { background:var(--glass-2);border:1px solid var(--line);border-radius:var(--radius-xl);padding:2rem;backdrop-filter:blur(20px); }
+.article-body h2 { font-size:1.5rem;font-weight:700;margin:1.5rem 0 .8rem;color:var(--text); }
+.article-body h3 { font-size:1.15rem;font-weight:600;margin:1.2rem 0 .5rem;color:var(--text); }
+.article-body p { color:var(--text-2);line-height:1.65;margin:0 0 1rem; }
+.article-body ul,.article-body ol { margin:0 0 1rem;padding-left:1.5rem; }
+.article-body li { color:var(--text-2);line-height:1.6;margin-bottom:.3rem; }
+.article-body a { color:var(--accent);text-decoration:underline; }
+.article-body a:hover { color:var(--accent-2); }
+.article-body img { border-radius:var(--radius);margin:1.5rem 0;max-width:100%; }
+.article-body blockquote { border-left:3px solid var(--accent);padding:.5rem 1rem;margin:1rem 0;background:var(--glass);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--text-2);font-style:italic; }
+.article-body code { background:var(--bg-3);padding:.15rem .4rem;border-radius:4px;font-family:var(--font-mono);font-size:.85em;color:var(--accent); }
+.article-body pre { background:var(--bg-3);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;overflow-x:auto;margin:1rem 0; }
+.article-body pre code { background:none;padding:0;color:var(--text-2); }
+
+.article-footer { margin-top:2rem;text-align:center; }
+</style>
 {% endblock %}

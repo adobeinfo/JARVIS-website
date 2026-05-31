@@ -11,7 +11,8 @@
         </div>
 
         <h1 class="hero-title">
-            {{ site.hero_title_lead }} <span class="accent">{{ site.hero_title_accent }}</span>
+            <span>{{ site.hero_title_lead }}</span>
+            <span class="accent">{{ site.hero_title_accent }}</span>
         </h1>
 
         <p class="hero-subtitle">
@@ -35,13 +36,18 @@
         </div>
 
         <div class="hero-meta">
-            {% for i in [1,2,3,4] %}
+            {% for i in [1,2,3] %}
             <div class="hero-meta-item">
                 <div class="hero-meta-num">{{ site['hero_meta_'+i|string+'_num'] }}</div>
                 <div class="hero-meta-label">{{ site['hero_meta_'+i|string+'_label'] }}</div>
             </div>
             {% endfor %}
+            <div class="hero-meta-item">
+                <div class="hero-meta-num" id="dlCount">{{ site.download_count }}</div>
+                <div class="hero-meta-label">Скачиваний</div>
+            </div>
         </div>
+        <script>(function(){var c=parseInt(document.getElementById('dlCount').textContent);if(c>0){var fmt=c>=1000000?(c/1e6).toFixed(1)+'M':c>=1000?(c/1e3).toFixed(c>=10000?0:1)+'K':c;document.getElementById('dlCount').textContent=fmt}})()</script>
     </div>
 </section>
 
@@ -84,7 +90,7 @@
 <section class="section" id="features">
     <div class="container">
         <div class="section-head animate-on-scroll">
-            <div class="section-label">Возможности</div>
+            <div class="section-label">{{ icon('zap', 12) }} Возможности</div>
             <h2>Создан для каждого&nbsp;дня</h2>
             <p>Полноценный AI-ассистент для управления компьютером голосом и текстом — без VPN и подписок.</p>
         </div>
@@ -138,7 +144,6 @@
                 <p class="feature-desc">Создавай свои цепочки команд — JARVIS выполнит их в один клик или по голосовой фразе.</p>
             </div>
 
-            <!-- Big showcase card -->
             <div class="feature-big animate-on-scroll">
                 <div class="feature-big-text">
                     <div class="section-label">JARVIS V2 2.2</div>
@@ -161,7 +166,7 @@
 <section class="section">
     <div class="container">
         <div class="section-head animate-on-scroll">
-            <div class="section-label">Демо</div>
+            <div class="section-label">{{ icon('message-circle', 12) }} Демо</div>
             <h2>Просто&nbsp;разговаривай</h2>
             <p>Никаких сложных команд. JARVIS понимает естественную речь и отвечает голосом.</p>
         </div>
@@ -193,7 +198,7 @@
 <section class="section">
     <div class="container">
         <div class="section-head animate-on-scroll">
-            <div class="section-label">Команды</div>
+            <div class="section-label">{{ icon('zap', 12) }} Команды</div>
             <h2>Всё, что&nbsp;нужно</h2>
             <p>Десятки готовых команд. Создавай свои — JARVIS запомнит и выполнит.</p>
         </div>
@@ -215,7 +220,7 @@
 <section class="section">
     <div class="container">
         <div class="section-head animate-on-scroll">
-            <div class="section-label">Обновления</div>
+            <div class="section-label">{{ icon('sparkles', 12) }} Обновления</div>
             <h2>Постоянно&nbsp;улучшается</h2>
             <p>JARVIS активно развивается — каждое обновление приносит новые возможности.</p>
         </div>
@@ -267,5 +272,70 @@
         </div>
     </div>
 </section>
+
+{% if site.sub_enabled_bool %}
+<!-- ═══ SUBSCRIPTION ═══════════════════════════════════════ -->
+<section class="section sub-section" id="subscription">
+    <div class="container">
+        <div class="section-head animate-on-scroll">
+            <div class="section-label">{{ icon('sparkles', 14) }} Премиум</div>
+            <h2>Откройте все возможности</h2>
+            <p>Подписка на JARVIS V3 — ранний доступ, эксклюзивные голоса, приоритетная поддержка</p>
+        </div>
+
+        <div class="sub-grid">
+            <div class="sub-card sub-card-features animate-on-scroll">
+                <div class="sub-feature">
+                    <div class="sub-feature-icon">{{ icon('zap', 18) }}</div>
+                    <div>
+                        <div class="sub-feature-title">Ранний доступ к V3</div>
+                        <div class="sub-feature-desc">Новые фичи за 2 недели до публичного релиза</div>
+                    </div>
+                </div>
+                <div class="sub-feature">
+                    <div class="sub-feature-icon">{{ icon('mic', 18) }}</div>
+                    <div>
+                        <div class="sub-feature-title">Эксклюзивные голоса</div>
+                        <div class="sub-feature-desc">10 премиум TTS-голосов, клонирование голоса</div>
+                    </div>
+                </div>
+                <div class="sub-feature">
+                    <div class="sub-feature-icon">{{ icon('message-circle', 18) }}</div>
+                    <div>
+                        <div class="sub-feature-title">Приоритетный AI</div>
+                        <div class="sub-feature-desc">GigaChat Pro, без лимитов на запросы</div>
+                    </div>
+                </div>
+                <div class="sub-feature">
+                    <div class="sub-feature-icon">{{ icon('headphones', 18) }}</div>
+                    <div>
+                        <div class="sub-feature-title">Поддержка 24/7</div>
+                        <div class="sub-feature-desc">Отдельный чат с разработчиками</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sub-card sub-card-pricing animate-on-scroll">
+                <div class="sub-badge">Хит сезона</div>
+                <div class="sub-price-wrap">
+                    <span class="sub-price-cur">₽</span>
+                    <span class="sub-price">{{ site.sub_price or '99' }}</span>
+                    <span class="sub-price-per">/мес</span>
+                </div>
+                <div class="sub-price-desc">Один платёж — все преимущества. Отмените в любой момент.</div>
+                <a href="{{ site.sub_link or 'https://t.me/Jarvis_pay_bot' }}"
+                   target="_blank" rel="noopener" class="sub-pay-btn">
+                    {{ icon('star', 16) }} Купить подписку
+                </a>
+                <div class="sub-trust">
+                    <span>{{ icon('shield-check', 12) }} Безопасно</span>
+                    <span>{{ icon('zap', 12) }} Мгновенно</span>
+                    <span>{{ icon('lock', 12) }} Telegram Payment</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
 
 {% endblock %}

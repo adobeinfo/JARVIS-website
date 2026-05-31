@@ -23,12 +23,10 @@
             rel="stylesheet"
             href="{{ url_for('static', filename='css/style.css') }}"
         />
-        {% if summer_design %}
         <link rel="stylesheet" href="{{ url_for('static', filename='css/summer.css') }}" />
-        {% endif %}
         {% block head %}{% endblock %}
     </head>
-    <body class="{% if summer_design %}summer{% endif %} {% if site.ann_enabled_bool %}has-ann{% endif %}">
+    <body class="{% if summer_design %}summer{% endif %} {% if site.ann_enabled_bool %}has-ann{% endif %}" id="appBody">
 
         {% if site.ann_enabled_bool and site.ann_text %}
         <a href="{{ site.ann_link or '#' }}" class="ann-bar style-{{ site.ann_style or 'accent' }}">
@@ -36,14 +34,12 @@
         </a>
         {% endif %}
 
-        {% if summer_design %}
         <div class="summer-banner">
             <span>{{ icon('sparkles', 14) }} Летний режим JARVIS</span>
             {% if event_active %}
             <a href="{{ url_for('event_page') }}">Перейти на эвент {{ icon('arrow-right', 14) }}</a>
             {% endif %}
         </div>
-        {% endif %}
         <!-- ═══ NAVBAR ══════════════════════════════════════════════ -->
         <nav class="navbar" id="navbar">
             <div class="nav-inner">
@@ -52,67 +48,56 @@
                 >
 
                 <ul class="nav-links" id="navLinks">
-                    <a
-                        href="{{ url_for('index') }}"
-                        class="{{ 'active' if request.endpoint=='index' else '' }}"
-                        >Главная</a
-                    >
-                    <a
-                        href="{{ url_for('news') }}"
-                        class="{{ 'active' if 'news' in (request.endpoint or '') else '' }}"
-                        >Новости</a
-                    >
-                    <a
-                        href="{{ url_for('forum') }}"
-                        class="{{ 'active' if 'forum' in (request.endpoint or '') else '' }}"
-                        >Форум</a
-                    >
-                    <a
-                        href="{{ url_for('download') }}"
-                        class="{{ 'active' if request.endpoint=='download' else '' }}"
-                        >Скачать</a
-                    >
+                    <a href="{{ url_for('index') }}"
+                       class="{{ 'active' if request.endpoint=='index' else '' }}">Главная</a>
+                    <a href="{{ url_for('news') }}"
+                       class="{{ 'active' if 'news' in (request.endpoint or '') else '' }}">Новости</a>
+                    <a href="{{ url_for('forum') }}"
+                       class="{{ 'active' if 'forum' in (request.endpoint or '') else '' }}">Форум</a>
                     {% if site.game_enabled_bool %}
-                    <a
-                        href="{{ url_for('game_page') }}"
-                        class="nav-game {{ 'active' if request.endpoint=='game_page' else '' }}"
-                        >{{ icon('gamepad', 15) }} Игра</a
-                    >
+                    <a href="{{ url_for('game_page') }}"
+                       class="nav-game {{ 'active' if request.endpoint=='game_page' else '' }}">
+                       {{ icon('gamepad', 15) }} Игра</a>
+                    {% endif %}
+                    {% if site.pixel_enabled_bool %}
+                    <a href="{{ url_for('pixel_battle_page') }}"
+                       class="nav-pixel {{ 'active' if request.endpoint=='pixel_battle_page' else '' }}"
+                       style="background:linear-gradient(90deg,#06b6d4,#14b8a6);color:#fff !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;">
+                       {{ icon('grid', 14) }} Pixel Battle</a>
                     {% endif %}
                     {% if site.blast_enabled_bool %}
-                    <a
-                        href="{{ url_for('blast_page') }}"
-                        class="nav-blast {{ 'active' if request.endpoint=='blast_page' else '' }}"
-                        style="background:linear-gradient(90deg,#7cf2ff,#b18cff,#ff7ab6);color:#0b0b10 !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;"
-                        >{{ icon('sparkles', 14) }} Block Blast</a
-                    >
+                    <a href="{{ url_for('blast_page') }}"
+                       class="nav-blast {{ 'active' if request.endpoint=='blast_page' else '' }}"
+                       style="background:linear-gradient(90deg,#7cf2ff,#06b6d4,#2dd4bf);color:#0b0b10 !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;">
+                       {{ icon('sparkles', 14) }} Block Blast</a>
                     {% endif %}
                     {% if event_active %}
-                    <a
-                        href="{{ url_for('event_page') }}"
-                        class="nav-event {{ 'active' if request.endpoint=='event_page' else '' }}"
-                        style="background:linear-gradient(90deg,#ff5e62,#ffb347);color:#fff !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;"
-                        >{{ icon('sparkles', 14) }} Эвент</a
-                    >
+                    <a href="{{ url_for('event_page') }}"
+                       class="nav-event {{ 'active' if request.endpoint=='event_page' else '' }}"
+                       style="background:linear-gradient(90deg,#ff5e62,#ffb347);color:#fff !important;padding:.3rem .9rem;border-radius:999px;font-weight:700;">
+                       {{ icon('sparkles', 14) }} Эвент</a>
                     {% endif %}
                 </ul>
 
                 <div class="nav-right">
-                    <a
-                        href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
-                        target="_blank"
-                        rel="noopener"
-                        class="nav-support"
-                        >{{ icon('heart', 14) }} Поддержать</a
-                    >
-                    <a href="{{ url_for('download') }}" class="nav-cta"
-                        >{{ icon('download', 14) }} Скачать</a
-                    >
-                    <div
-                        class="nav-burger"
-                        id="navBurger"
-                        onclick="toggleMenu()"
-                    >
+                    {% if site.reg_enabled_bool %}
+                    <a href="{{ url_for('register') }}" class="nav-register">
+                        {{ icon('mail', 14) }} Регистрация</a>
+                    {% endif %}
+                    {% if site.sub_enabled_bool %}
+                    <a href="{{ site.sub_link or 'https://t.me/Jarvis_pay_bot' }}"
+                       target="_blank" rel="noopener" class="nav-sub">
+                        {{ icon('star', 14) }} {{ site.sub_price or '99' }}₽</a>
+                    {% endif %}
+                    <a href="{{ site.social_boosty or 'https://boosty.to/photoshop24/donate' }}"
+                       target="_blank" rel="noopener" class="nav-support">
+                        {{ icon('heart', 14) }} Донат</a>
+                    <button class="nav-settings-btn" id="navSettingsBtn"
+                            onclick="toggleSettings()" title="Настройки">
+                        {{ icon('settings', 16) }}</button>
+                    <a href="{{ url_for('download') }}" class="nav-cta">
+                        {{ icon('download', 14) }} Скачать</a>
+                    <div class="nav-burger" id="navBurger" onclick="toggleMenu()">
                         <span></span><span></span><span></span>
                     </div>
                 </div>
@@ -132,7 +117,30 @@
             </div>
             {% endfor %}
         </div>
-        {% endif %} {% endwith %} {% block content %}{% endblock %}
+        {% endif %} {% endwith %}
+
+        <!-- ═══ SETTINGS PANEL ═══════════════════════════════════ -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-panel-header">
+                <span>{{ icon('settings', 16) }} Настройки</span>
+                <button class="settings-close" onclick="toggleSettings()">{{ icon('x', 16) }}</button>
+            </div>
+            <div class="settings-panel-body">
+                <div class="settings-row">
+                    <div class="settings-row-info">
+                        <div class="settings-row-title">{{ icon('sparkles', 14) }} Летний дизайн</div>
+                        <div class="settings-row-desc">Светлая летняя тема оформления</div>
+                    </div>
+                    <label class="settings-toggle">
+                        <input type="checkbox" id="summerToggle" onchange="toggleSummerDesign()">
+                        <span class="settings-toggle-track"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+
+        {% block content %}{% endblock %}
 
         <!-- ═══ FOOTER ══════════════════════════════════════════════ -->
         <footer class="footer">
@@ -279,6 +287,13 @@
                 </div>
             </div>
         </div>
+
+        {% if site.sub_enabled_bool %}
+        <a href="{{ site.sub_link or 'https://t.me/Jarvis_pay_bot' }}" target="_blank" rel="noopener" class="sub-fab">
+            {{ icon('star', 16) }}
+            <span class="sub-fab-label">Premium {{ site.sub_price or '99' }}₽</span>
+        </a>
+        {% endif %}
 
         <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     </body>

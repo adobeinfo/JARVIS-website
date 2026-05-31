@@ -242,6 +242,148 @@
     </div>
   </div>
 
+  {# ─────────────── EMAIL (SMTP / SendGrid) ─────────────── #}
+  <div class="a-card" id="email">
+    <div class="a-card-head">
+      <div>
+        <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('mail', 16) }} Отправка писем (регистрация)</div>
+        <div class="a-help" style="margin-top:0.3rem;">
+          Настройки провайдера для отправки писем подтверждения email при регистрации.
+          Можно использовать SMTP или SendGrid API.
+        </div>
+      </div>
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Провайдер</label>
+      <select class="a-select" name="reg_mail_provider" id="reg_mail_provider">
+        <option value="smtp" {% if s.reg_mail_provider == 'smtp' %}selected{% endif %}>SMTP</option>
+        <option value="sendgrid" {% if s.reg_mail_provider == 'sendgrid' %}selected{% endif %}>SendGrid API</option>
+        <option value="brevo" {% if s.reg_mail_provider == 'brevo' %}selected{% endif %}>Brevo API</option>
+        <option value="elasticemail" {% if s.reg_mail_provider == 'elasticemail' %}selected{% endif %}>Elastic Email API</option>
+      </select>
+      <div class="a-help">Выберите способ отправки писем</div>
+    </div>
+
+    <div id="smtp_fields">
+      <div class="a-card-title" style="margin-top:1.2rem;margin-bottom:0.6rem;">SMTP</div>
+      <div class="a-field-row">
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">SMTP Хост</label>
+          <input class="a-input" type="text" name="reg_smtp_host" value="{{ s.reg_smtp_host }}" placeholder="smtp.yandex.ru" />
+        </div>
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">SMTP Порт</label>
+          <input class="a-input" type="number" name="reg_smtp_port" value="{{ s.reg_smtp_port }}" placeholder="587" />
+        </div>
+      </div>
+      <div class="a-field-row">
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">SMTP Логин</label>
+          <input class="a-input" type="text" name="reg_smtp_user" value="{{ s.reg_smtp_user }}" autocomplete="off" />
+        </div>
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">SMTP Пароль</label>
+          <input class="a-input" type="password" name="reg_smtp_pass" value="{{ s.reg_smtp_pass }}" autocomplete="off" />
+        </div>
+      </div>
+      <div class="a-field-row">
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">From email</label>
+          <input class="a-input" type="text" name="reg_smtp_from" value="{{ s.reg_smtp_from }}" placeholder="noreply@example.com" />
+        </div>
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">From name</label>
+          <input class="a-input" type="text" name="reg_smtp_from_name" value="{{ s.reg_smtp_from_name }}" placeholder="JARVIS AI" />
+        </div>
+      </div>
+    </div>
+
+    <div id="sendgrid_fields" style="display:none;">
+      <div class="a-card-title" style="margin-top:1.2rem;margin-bottom:0.6rem;">SendGrid API</div>
+      <div class="a-field">
+        <label class="a-label">API Key</label>
+        <input class="a-input" type="password" name="reg_sendgrid_key" value="{{ s.reg_sendgrid_key }}" autocomplete="off"
+               placeholder="SG.xxxxx..." />
+        <div class="a-help">API-ключ из SendGrid Dashboard → Settings → API Keys</div>
+      </div>
+      <div class="a-field-row">
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">Email отправителя</label>
+          <input class="a-input" type="text" name="reg_sendgrid_from" value="{{ s.reg_sendgrid_from }}"
+                 placeholder="noreply@yourdomain.com" />
+          <div class="a-help">Должен быть верифицирован в SendGrid</div>
+        </div>
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">Имя отправителя</label>
+          <input class="a-input" type="text" name="reg_sendgrid_from_name" value="{{ s.reg_sendgrid_from_name }}"
+                 placeholder="JARVIS AI" />
+        </div>
+      </div>
+    </div>
+
+    <div id="brevo_fields" style="display:none;">
+      <div class="a-card-title" style="margin-top:1.2rem;margin-bottom:0.6rem;">Brevo API</div>
+      <div class="a-field">
+        <label class="a-label">API Key</label>
+        <input class="a-input" type="password" name="reg_brevo_key" value="{{ s.reg_brevo_key }}" autocomplete="off"
+               placeholder="xxxxx..." />
+        <div class="a-help">API-ключ из Brevo → Settings → API Keys → Create a new API key (v3)</div>
+      </div>
+      <div class="a-field-row">
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">Email отправителя</label>
+          <input class="a-input" type="text" name="reg_brevo_from" value="{{ s.reg_brevo_from }}"
+                 placeholder="noreply@yourdomain.com" />
+          <div class="a-help">Должен быть верифицирован в Brevo (Sender Authentication)</div>
+        </div>
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">Имя отправителя</label>
+          <input class="a-input" type="text" name="reg_brevo_from_name" value="{{ s.reg_brevo_from_name }}"
+                 placeholder="JARVIS AI" />
+        </div>
+      </div>
+    </div>
+
+    <div id="elasticemail_fields" style="display:none;">
+      <div class="a-card-title" style="margin-top:1.2rem;margin-bottom:0.6rem;">Elastic Email API</div>
+      <div class="a-field">
+        <label class="a-label">API Key</label>
+        <input class="a-input" type="password" name="reg_elasticemail_key" value="{{ s.reg_elasticemail_key }}" autocomplete="off"
+               placeholder="xxxxx..." />
+        <div class="a-help">API-ключ из Elastic Email → Settings → Your API Key</div>
+      </div>
+      <div class="a-field-row">
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">Email отправителя</label>
+          <input class="a-input" type="text" name="reg_elasticemail_from" value="{{ s.reg_elasticemail_from }}"
+                 placeholder="noreply@yourdomain.com" />
+          <div class="a-help">Должен быть верифицирован в Elastic Email</div>
+        </div>
+        <div class="a-field" style="margin:0;">
+          <label class="a-label">Имя отправителя</label>
+          <input class="a-input" type="text" name="reg_elasticemail_from_name" value="{{ s.reg_elasticemail_from_name }}"
+                 placeholder="JARVIS AI" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var sel = document.getElementById('reg_mail_provider');
+    function toggle() {
+      var v = sel.value;
+      document.getElementById('smtp_fields').style.display = v === 'smtp' ? '' : 'none';
+      document.getElementById('sendgrid_fields').style.display = v === 'sendgrid' ? '' : 'none';
+      document.getElementById('brevo_fields').style.display = v === 'brevo' ? '' : 'none';
+      document.getElementById('elasticemail_fields').style.display = v === 'elasticemail' ? '' : 'none';
+    }
+    sel.addEventListener('change', toggle);
+    toggle();
+  })();
+  </script>
+
   {# ─────────────── BLOCK BLAST ─────────────── #}
   <div class="a-card" id="blast">
     <div class="a-card-head">
@@ -272,6 +414,28 @@
       <label class="a-label">Приз (плашка над игрой) — опционально</label>
       <input class="a-input" type="text" name="blast_prize_text" value="{{ s.blast_prize_text }}"
              placeholder="Например: топ-3 месяца получают эксклюзивный бейдж" />
+    </div>
+  </div>
+
+  {# ─────────────── PIXEL BATTLE ─────────────── #}
+  <div class="a-card" id="pixel">
+    <div class="a-card-head">
+      <div>
+        <div class="a-card-title-lg" style="display:flex;align-items:center;gap:.5rem;">{{ icon('grid', 16) }} Pixel Battle</div>
+        <div class="a-help" style="margin-top:0.3rem;">
+          Полотно 100×100 пикселей. Каждый пиксель можно закрашивать раз в 10 секунд.
+          Когда включена — появляется в навбаре.
+        </div>
+      </div>
+      <label class="a-toggle">
+        <input type="checkbox" name="pixel_enabled" {% if s.pixel_enabled == '1' %}checked{% endif %}>
+        <span class="a-toggle-track"></span>
+      </label>
+    </div>
+
+    <div class="a-field">
+      <label class="a-label">Кулдаун (секунд)</label>
+      <input class="a-input" type="number" name="pixel_cooldown" min="1" max="300" value="{{ s.pixel_cooldown or '10' }}" />
     </div>
   </div>
 
