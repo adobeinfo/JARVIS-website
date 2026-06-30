@@ -7,8 +7,9 @@ import os
 from pathlib import Path
 from aiohttp import web
 
-DB_PATH = Path(__file__).parent.parent / "marketplace.db"
-WEB_DIR = Path(__file__).parent / "web"
+BASE_DIR = Path.cwd()
+DB_PATH = BASE_DIR / "marketplace.db"
+WEB_DIR = BASE_DIR / "web"
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8080"))
 
