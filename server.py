@@ -358,12 +358,12 @@ def init_db():
         conn.execute("INSERT OR IGNORE INTO categories(name, icon) VALUES(?, ?)", (name, icon))
     conn.commit()
     conn.close()
-    print(f"✅ База данных готова: {DB_PATH}")
+    print(f"[OK] Database created: {DB_PATH}")
 
 
 if __name__ == "__main__":
     init_db()
-    print(f"🌐 AE Marketplace Web App")
-    print(f"   http://{HOST}:{PORT}")
-    print(f"   DB: {DB_PATH}")
+    print(f"[INFO] AE Marketplace Web App")
+    print(f"[INFO] http://{HOST}:{PORT}")
+    print(f"[INFO] DB: {DB_PATH}")
     web.run_app(create_app(), host=HOST, port=PORT)
